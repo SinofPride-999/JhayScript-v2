@@ -1,0 +1,9 @@
+MAP =
+    | means OR
+    * zero or more of what is before it
+
+expr      : term ((PLUS | MINUS) term)*
+
+term      : factor ((MUL | DIV) factor)*
+
+factor    : INT | FLOAT
