@@ -2,6 +2,7 @@ import bankai
 
 while True:
     text = input('bankai > ')
+    
     if text.strip().lower() == "exit":
         break
     

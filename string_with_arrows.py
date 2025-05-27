@@ -1,5 +1,6 @@
 def string_with_arrows(text, pos_start, pos_end):
     result = ''
+    tok_op = -1
 
     # Calculate indices
     idx_start = text.rfind('\n', 0, pos_start.idx)
