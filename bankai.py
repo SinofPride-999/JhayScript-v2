@@ -323,6 +323,14 @@ class Parser:
 
         return res.success(left)
 
+
+#################################
+#   INTERPRETER
+#################################
+class Interpreter:
+    def visit(self, node):
+        pass
+
 #################################
 #   RUN
 #################################
