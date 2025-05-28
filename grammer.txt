@@ -12,4 +12,10 @@ term      : factor ((MUL | DIV) factor)*
 
 factor    : INT | FLOAT
           : (PLUS | MINUS) factor
+          : LPAREN expr 
+          : power
+
+power      : atom (POW factor)*
+          
+atom      : INT | FLOAT
           : LPAREN expr RPAREN
