@@ -6,6 +6,7 @@
 #
 #################################################
 
+expr      : KEYWORD:VAR IDENTIFIER EQ expr
 expr      : term ((PLUS | MINUS) term)*
 
 term      : factor ((MUL | DIV) factor)*
@@ -17,5 +18,10 @@ factor    : INT | FLOAT
 
 power      : atom (POW factor)*
           
-atom      : INT | FLOAT
+atom      : INT | FLOAT | IDENTIFIER
           : LPAREN expr RPAREN
+
+
+# spawn, initiate, bind, 
+
+VAR a = 5 + 5
