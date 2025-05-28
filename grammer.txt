@@ -6,22 +6,25 @@
 #
 #################################################
 
-expr      : KEYWORD:VAR IDENTIFIER EQ expr
-expr      : term ((PLUS | MINUS) term)*
+expr        :   KEYWORD:VAR IDENTIFIER EQ expr
+            :   arith-expr ((EE | LT | GT | LTE | GTE) arith-expr)*
 
-term      : factor ((MUL | DIV) factor)*
+arith-expr  :   term ((PLUS | MINUS) term)*
 
-factor    : INT | FLOAT
-          : (PLUS | MINUS) factor
-          : LPAREN expr 
-          : power
+term        :   factor ((MUL | DIV) factor)*
 
-power      : atom (POW factor)*
+factor      :   INT | FLOAT
+            :   (PLUS | MINUS) factor
+            :   LPAREN expr 
+            :   power
+
+power       :   atom (POW factor)*
           
-atom      : INT | FLOAT | IDENTIFIER
-          : LPAREN expr RPAREN
+atom        :   INT | FLOAT | IDENTIFIER
+            :   LPAREN expr RPAREN
 
 
 # spawn, initiate, bind, 
 
 VAR a = 5 + 5
+# 6:50/14:56
