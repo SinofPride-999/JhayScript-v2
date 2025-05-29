@@ -3,6 +3,7 @@
 #   MAP =
 #       | means OR
 #       * zero or more of what is before it
+#       ? optional
 #
 #################################################
 
@@ -25,9 +26,10 @@ power       :   atom (POW factor)*
           
 atom        :   INT | FLOAT | IDENTIFIER
             :   LPAREN expr RPAREN
+            :   if-expr
+
+if-expr     :   KEYWORD: IF expr | KEYWORD: THEN expr
+               (KEYWORD: ELIF expr  |   KEYWORD: THEN expr)*
+               (KEYWORD: ELSE expr)?
 
 
-# spawn, initiate, bind, 
-
-VAR a = 5 + 5
-# 6:50/14:56
