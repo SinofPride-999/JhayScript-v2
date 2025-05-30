@@ -1,3 +1,3 @@
 initiate    ===    variable declaration
 bankai      ===    print call
-arise       ===    function declaration
+function       ===    function declaration

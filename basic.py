@@ -13,6 +13,7 @@ LETTERS_DIGITS = LETTERS + DIGITS
 # DATA TYPES
 TT_INT = 'INT'
 TT_FLOAT = 'FLOAT'
+TT_STRING = 'STRING'
 
 # SPECIALS
 TT_IDENTIFIER = 'IDENTIFIER'
@@ -55,7 +56,7 @@ KEYWORDS = [
     'TO',
     'STEP',
     'WHILE',
-    'ARISE'
+    'function'
 ]
 
 #################################
@@ -191,6 +192,9 @@ class Lexer:
                 tokens.append(self.make_number())
             elif self.current_char in LETTERS:
                 tokens.append(self.make_indentifier())
+            elif self.current_char == '"':
+                tokens.append(self.make_string())
+                self.advance()
             elif self.current_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start = self.pos))
                 self.advance()
@@ -257,6 +261,32 @@ class Lexer:
             return Token(TT_INT, int(num_str), pos_start, self.pos)
         else:
             return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+
+    def make_string(self):
+        string = ''
+        pos_start = self.pos.copy()
+        escape_character = False
+        self.advance()
+
+        escape_characters = {
+            'n': '\n',
+            't': '\t'
+        }
+
+        while self.current_char != None and self.current_char != '"' or escape_character:
+            if escape_character:
+                string += escape_characters.get(self.current_char, self.current_char)
+            else:
+                if self.current_char == '\\':
+                    escape_character = True
+                else:
+                    string += self.current_char
+            self.advance()
+            escape_character = False
+
+        self.advance()
+        return Token(TT_STRING, string, pos_start, self.pos)
 
 
     def make_indentifier(self):
@@ -344,6 +374,17 @@ class NumberNode:
     def __repr__(self):
         return f'{self.tok}'
     
+
+    
+class StringNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+        self.pos_start = self.tok.pos_start
+        self.pos_end = self.tok.pos_end
+
+    def __repr__(self):
+        return f'{self.tok}'
 
 class VarAccessNode:
     def  __init__(self, var_name_tok):
@@ -538,7 +579,7 @@ class Parser:
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected 'initiate', ,'IF', 'FOR', 'WHILE', 'ARISE', int, float, identidier, '+', '-', '(', or 'NOT'"
+                "Expected 'initiate', ,'IF', 'FOR', 'WHILE', 'function', int, float, identidier, '+', '-', '(', or 'NOT'"
             ))
         
         return res.success(node)
@@ -776,7 +817,7 @@ class Parser:
                 if res.error:
                     return res.failure(InvalidSyntaxError(
                         self.current_tok.pos_start, self.current_tok.pos_end,
-                        "Expected ')', 'initiate', 'IF', 'FOR', 'WHILE', 'ARISE', 'int', 'float', 'identifier'"
+                        "Expected ')', 'initiate', 'IF', 'FOR', 'WHILE', 'function', 'int', 'float', 'identifier'"
                     ))
                 
                 while self.current_tok.type == TT_COMMA:
@@ -807,6 +848,11 @@ class Parser:
             res.register_advancement()
             self.advance()
             return res.success(NumberNode(tok))
+
+        if tok.type in (TT_STRING):
+            res.register_advancement()
+            self.advance()
+            return res.success(StringNode(tok))
 
         elif tok.type == TT_IDENTIFIER:
             res.register_advancement()
@@ -855,7 +901,7 @@ class Parser:
             
             return res.success(while_expr)
         
-        elif tok.matches(TT_KEYWORD, 'ARISE'):
+        elif tok.matches(TT_KEYWORD, 'function'):
             func_def = res.register(self.func_def())
 
             if res.error:
@@ -866,7 +912,7 @@ class Parser:
 
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
-            "Expected int or float, identifier, '+', '-', '(', 'IF', 'FOR', 'WHILE', 'ARISE'"
+            "Expected int or float, identifier, '+', '-', '(', 'IF', 'FOR', 'WHILE', 'function'"
         ))
     
 
@@ -892,10 +938,10 @@ class Parser:
     def func_def(self):
         res = ParseResult()
 
-        if not self.current_tok.matches(TT_KEYWORD, 'ARISE'):
+        if not self.current_tok.matches(TT_KEYWORD, 'function'):
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected 'ARISE'"
+                f"Expected 'function'"
             ))
 
         res.register_advancement()
@@ -1222,6 +1268,39 @@ class Number(Value):
         return str(self.value)
 
 
+
+class String(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def added_to(self, other):
+        if isinstance(other, String):
+            return String(self.value + other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def multed_by(self, other):
+        if isinstance(other, Number):
+            return String(self.value * other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def is_true(self):
+        return len(self.value) > 0
+
+    def copy(self):
+        copy = String(self.value)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+
+        return copy
+
+    def __repr__(self):
+        return f'"{self.value}"'
+
+
+
 class Function(Value):
     def __init__(self, name, body_node, arg_names):
         super().__init__()
@@ -1323,6 +1402,10 @@ class Interpreter:
             Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
         )
 
+    def visit_StringNode(self, node, context):
+        return RTResult().success(
+            String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
     def visit_VarAccessNode(self, node, context):
         res = RTResult()
