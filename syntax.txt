@@ -1,5 +1,3 @@
 initiate    ===    variable declaration
 bankai      ===    print call
-technique   ===    function declaration
-
-IF <condition> THEN <expression> ELIF <condition> THEN <expression> ELSE <condition>
+arise       ===    function declaration
