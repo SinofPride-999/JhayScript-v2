@@ -6,42 +6,44 @@ import string
 #   CONSTANT
 #################################
 
-DIGITS = '0123456789'
-LETTERS = string.ascii_letters
+DIGITS         = '0123456789'
+LETTERS        = string.ascii_letters
 LETTERS_DIGITS = LETTERS + DIGITS
 
 # DATA TYPES
-TT_INT = 'INT'
-TT_FLOAT = 'FLOAT'
-TT_STRING = 'STRING'
+TT_INT         = 'INT'
+TT_FLOAT       = 'FLOAT'
+TT_STRING      = 'STRING'
 
 # SPECIALS
-TT_IDENTIFIER = 'IDENTIFIER'
-TT_KEYWORD = 'KEYWORD'
-TT_EQ = 'EQ' 
+TT_IDENTIFIER  = 'IDENTIFIER'
+TT_KEYWORD     = 'KEYWORD'
+TT_EQ          = 'EQ' 
 
 # COMPARISONS
-TT_EE = 'EE'
-TT_NE = 'NE'
-TT_LT = 'LT'
-TT_GT = 'GT'
-TT_LTE = 'LTE'
-TT_GTE = 'GTE'
+TT_EE          = 'EE'
+TT_NE          = 'NE'
+TT_LT          = 'LT'
+TT_GT          = 'GT'
+TT_LTE         = 'LTE'
+TT_GTE         = 'GTE'
 
-# AITHMETICS
-TT_PLUS = 'PLUS'
-TT_MINUS = 'MINUS'
-TT_MUL = 'MUL'
-TT_DIV = 'DIV'
-TT_POW = 'POW'
+# ARITHMETICS
+TT_PLUS        = 'PLUS'
+TT_MINUS       = 'MINUS'
+TT_MUL         = 'MUL'
+TT_DIV         = 'DIV'
+TT_POW         = 'POW'
 
 # SYNTAX
-TT_LPAREN = 'LPAREN'    
-TT_RPAREN = 'RPAREN'
-TT_COMMA = 'COMMA'
-TT_ARROW = 'ARROW'
+TT_LPAREN      = 'LPAREN'    
+TT_RPAREN      = 'RPAREN'
+TT_COMMA       = 'COMMA'
+TT_ARROW       = 'ARROW'
+TT_LSQUARE     = 'LSQUARE'
+TT_RSQUARE     = 'RSQUARE'
 
-TT_EOF = 'EOF'  # To detect if we reach EOF in Parser
+TT_EOF         = 'EOF'  # To detect if we reach EOF in Parser
 
 KEYWORDS = [
     'initiate',
@@ -188,33 +190,52 @@ class Lexer:
         while self.current_char != None:
             if self.current_char in ' \t':
                 self.advance()
+
             elif self.current_char in DIGITS:
                 tokens.append(self.make_number())
+
             elif self.current_char in LETTERS:
                 tokens.append(self.make_indentifier())
+
             elif self.current_char == '"':
                 tokens.append(self.make_string())
                 self.advance()
+
             elif self.current_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start = self.pos))
                 self.advance()
+
             elif self.current_char == '-':
                 tokens.append(self.make_minu_or_arrow())
+
             elif self.current_char == '*':
                 tokens.append(Token(TT_MUL, pos_start = self.pos))
                 self.advance()
+
             elif self.current_char == '/':
                 tokens.append(Token(TT_DIV, pos_start = self.pos))
                 self.advance()
+
             elif self.current_char == '^':
                 tokens.append(Token(TT_POW, pos_start = self.pos))
                 self.advance()
+
             elif self.current_char == '(':
                 tokens.append(Token(TT_LPAREN, pos_start = self.pos))
                 self.advance()
+
             elif self.current_char == ')':
                 tokens.append(Token(TT_RPAREN, pos_start = self.pos))
                 self.advance()
+
+            elif self.current_char == '[':
+                tokens.append(Token(TT_LSQUARE, pos_start = self.pos))
+                self.advance()
+
+            elif self.current_char == ']':
+                tokens.append(Token(TT_RSQUARE, pos_start = self.pos))
+                self.advance()
+
             elif self.current_char == '!':
                 tok, error = self.make_not_equals()
 
@@ -224,13 +245,17 @@ class Lexer:
 
             elif self.current_char == '=':
                 tokens.append(self.make_equals())
+
             elif self.current_char == '<':
                 tokens.append(self.make_less_than())
+
             elif self.current_char == '>':
                 tokens.append(self.make_greater_than())
+
             elif self.current_char == ',':
                 tokens.append(Token(TT_COMMA, pos_start = self.pos))
                 self.advance()
+
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
@@ -385,6 +410,15 @@ class StringNode:
 
     def __repr__(self):
         return f'{self.tok}'
+
+
+class ListNode:
+    def __init__(self, element_nodes, pos_start, pos_end):
+        self.element_nodes = element_nodes
+
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+
 
 class VarAccessNode:
     def  __init__(self, var_name_tok):
@@ -579,7 +613,7 @@ class Parser:
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected 'initiate', ,'IF', 'FOR', 'WHILE', 'function', int, float, identidier, '+', '-', '(', or 'NOT'"
+                "Expected 'initiate', ,'IF', 'FOR', 'WHILE', 'function', int, float, identidier, '+', '-', '(', '[', or 'NOT'"
             ))
         
         return res.success(node)
@@ -615,10 +649,144 @@ class Parser:
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected int or float, identifier, '+', '-', '(', or 'NOT'"
+                "Expected int or float, identifier, '+', '-', '(', '[', or 'NOT'"
             ))
         
         return res.success(node)
+
+
+    def atom(self):
+        res = ParseResult()
+        tok = self.current_tok
+
+        if tok.type in (TT_INT, TT_FLOAT):
+            res.register_advancement()
+            self.advance()
+            return res.success(NumberNode(tok))
+
+        if tok.type in (TT_STRING):
+            res.register_advancement()
+            self.advance()
+            return res.success(StringNode(tok))
+
+        elif tok.type == TT_IDENTIFIER:
+            res.register_advancement()
+            self.advance()
+            return res.success(VarAccessNode(tok))
+        
+        elif tok.type == TT_LPAREN:
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+
+            if res.error:
+                return res
+            
+            if self.current_tok.type == TT_RPAREN:
+                res.register_advancement()
+                self.advance()
+                return res.success(expr)
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ')'"
+                ))
+            
+        elif tok.type == TT_LSQUARE:
+            list_expr = res.register(self.list_expr())
+
+            if res.error:
+                return res
+            
+            return res.success(list_expr)
+                
+        elif tok.matches(TT_KEYWORD, 'IF'):
+            if_expr = res.register(self.if_expr())
+
+            if res.error:
+                return res
+            
+            return res.success(if_expr)
+        
+        elif tok.matches(TT_KEYWORD, 'FOR'):
+            for_expr = res.register(self.for_expr())
+
+            if res.error:
+                return res
+            
+            return res.success(for_expr)
+        
+        elif tok.matches(TT_KEYWORD, 'WHILE'):
+            while_expr = res.register(self.while_expr())
+
+            if res.error:
+                return res
+            
+            return res.success(while_expr)
+        
+        elif tok.matches(TT_KEYWORD, 'function'):
+            func_def = res.register(self.func_def())
+
+            if res.error:
+                return res
+            
+            return res.success(func_def)
+
+
+        return res.failure(InvalidSyntaxError(
+            tok.pos_start, tok.pos_end,
+            "Expected int or float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'function'"
+        ))
+        
+
+    
+    def list_expr(self):
+        res = ParseResult()
+        element_nodes = []
+        pos_start = self.current_tok.pos_start.copy()
+
+        if self.current_tok.type != TT_LSQUARE:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '['"
+            ))
+        
+        res.register_advancement()
+        self.advance()
+
+        if self.current_tok.type == TT_RSQUARE:
+            res.register_advancement()
+            self.advance()
+        else:
+            element_nodes.append(res.register(self.expr()))
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ']', 'initiate', 'IF', 'FOR', 'WHILE', 'function', 'int', 'float', 'identifier', '+', '-', '(', '[' or 'NOT'"
+                ))
+            
+            while self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
+
+                element_nodes.append(res.register(self.expr()))
+                if res.error:
+                    return res
+                
+            if self.current_tok.type != TT_RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ',' or ']'"
+                ))
+            
+            res.register_advancement()
+            self.advance()
+
+        return res.success(ListNode(
+            element_nodes,
+            pos_start,
+            self.current_tok.pos_end.copy()
+        ))
     
 
     def if_expr(self):
@@ -817,7 +985,7 @@ class Parser:
                 if res.error:
                     return res.failure(InvalidSyntaxError(
                         self.current_tok.pos_start, self.current_tok.pos_end,
-                        "Expected ')', 'initiate', 'IF', 'FOR', 'WHILE', 'function', 'int', 'float', 'identifier'"
+                        "Expected ')', 'initiate', 'IF', 'FOR', 'WHILE', 'function', 'int', 'float', 'identifier', '+'. '-', '(', '[' or 'NOT'"
                     ))
                 
                 while self.current_tok.type == TT_COMMA:
@@ -839,82 +1007,6 @@ class Parser:
             
             return res.success(CallNode(atom, arg_nodes))
         return res.success(atom)
-
-    def atom(self):
-        res = ParseResult()
-        tok = self.current_tok
-
-        if tok.type in (TT_INT, TT_FLOAT):
-            res.register_advancement()
-            self.advance()
-            return res.success(NumberNode(tok))
-
-        if tok.type in (TT_STRING):
-            res.register_advancement()
-            self.advance()
-            return res.success(StringNode(tok))
-
-        elif tok.type == TT_IDENTIFIER:
-            res.register_advancement()
-            self.advance()
-            return res.success(VarAccessNode(tok))
-        
-        elif tok.type == TT_LPAREN:
-            res.register_advancement()
-            self.advance()
-            expr = res.register(self.expr())
-
-            if res.error:
-                return res
-            
-            if self.current_tok.type == TT_RPAREN:
-                res.register_advancement()
-                self.advance()
-                return res.success(expr)
-            else:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected ')'"
-                ))
-                  
-        elif tok.matches(TT_KEYWORD, 'IF'):
-            if_expr = res.register(self.if_expr())
-
-            if res.error:
-                return res
-            
-            return res.success(if_expr)
-        
-        elif tok.matches(TT_KEYWORD, 'FOR'):
-            for_expr = res.register(self.for_expr())
-
-            if res.error:
-                return res
-            
-            return res.success(for_expr)
-        
-        elif tok.matches(TT_KEYWORD, 'WHILE'):
-            while_expr = res.register(self.while_expr())
-
-            if res.error:
-                return res
-            
-            return res.success(while_expr)
-        
-        elif tok.matches(TT_KEYWORD, 'function'):
-            func_def = res.register(self.func_def())
-
-            if res.error:
-                return res
-            
-            return res.success(func_def)
-
-
-        return res.failure(InvalidSyntaxError(
-            tok.pos_start, tok.pos_end,
-            "Expected int or float, identifier, '+', '-', '(', 'IF', 'FOR', 'WHILE', 'function'"
-        ))
-    
 
     def power(self):
         return self.bin_op(self.call, (TT_POW, ), self.factor)
@@ -1300,6 +1392,64 @@ class String(Value):
         return f'"{self.value}"'
 
 
+class List(Value):
+    def __init__(self, elements):
+        super().__init__()
+        self.elements = elements
+
+    def added_to(self, other):
+        new_list = self.copy()
+        new_list.elements.append(other)
+
+        return new_list, None
+
+    def subbed_by(self, other):
+        if isinstance(other, Number):
+            new_list = self.copy()
+
+            try:
+                new_list.elements.pop(other.value)
+                return new_list, None
+            except:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    "Element at this index could not be removed because index is out of bounds",
+                    self.context
+                )
+        else:
+            return None, Value.illegal_operation(self, other)        
+    
+    def multed_by(self, other):
+        if isinstance(other, List):
+            new_list = self.copy()
+            new_list.elements.extend(other.elements) # extend() allows for concatination
+            
+            return new_list, None
+        else:
+            return None, Value.illegal_operation(self, other)
+        
+    def dived_by(self, other):
+        if isinstance(other, Number):
+            try:
+                return self.elements[other.value], None
+            except:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    "Element at this index could not be retrieved from list because index is out of bounds",
+                    self.context
+                )
+        else:
+            return None, Value.illegal_operation(self, other)  
+
+    def copy(self):
+        copy = List(self.elements[:])
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+
+        return copy
+
+    def __repr__(self):
+        return f'[{", ".join([str(x) for x in self.elements])}]'
 
 class Function(Value):
     def __init__(self, name, body_node, arg_names):
@@ -1402,10 +1552,28 @@ class Interpreter:
             Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
         )
 
+
     def visit_StringNode(self, node, context):
         return RTResult().success(
             String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
         )
+
+
+    def visit_ListNode(self, node, context):
+        res = RTResult()
+        elements = []
+
+        for element_node in node.element_nodes:
+            elements.append(
+                res.register(self.visit(
+                    element_node, context
+                ))
+            )
+
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
+
 
     def visit_VarAccessNode(self, node, context):
         res = RTResult()
@@ -1422,6 +1590,7 @@ class Interpreter:
         value = value.copy().set_pos(node.pos_start, node.pos_end)
         return res.success(value)
 
+
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_tok.value
@@ -1432,6 +1601,7 @@ class Interpreter:
         
         context.symbol_table.set(var_name, value)
         return res.success(value)
+
 
     def visit_BinOpNode(self, node, context):
         res = RTResult()
@@ -1535,8 +1705,10 @@ class Interpreter:
         
         return res.success(None)
 
+
     def visit_ForNode(self, node, context):
         res = RTResult()
+        elements = []
 
         start_value = res.register(self.visit(node.start_value_node, context))
         if res.error:
@@ -1564,15 +1736,18 @@ class Interpreter:
             context.symbol_table.set(node.var_name_tok.value, Number(i))
             i += step_value.value
 
-            res.register(self.visit(node.body_node, context))
+            elements.append(res.register(self.visit(node.body_node, context)))
             if res.error:
                 return res
             
-        return res.success(None)
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
     
 
     def visit_WhileNode(self, node, context):
         res = RTResult()
+        elements = []
 
         while True:
             condition = res.register(self.visit(node.condition_node, context))
@@ -1582,11 +1757,14 @@ class Interpreter:
             if not condition.is_true():
                 break
 
-            res.register(self.visit(node.body_node, context))
+            elements.append(res.register(self.visit(node.body_node, context)))
             if res.error:
                 return res
             
-        return res.success(None)
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
+
 
     def visit_FuncDefNode(self, node, context):
         res = RTResult()
@@ -1600,6 +1778,7 @@ class Interpreter:
             context.symbol_table.set(func_name, func_value)
 
         return res.success(func_value)
+
 
     def visit_CallNode(self, node, context):
         res = RTResult()

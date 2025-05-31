@@ -1,3 +1,5 @@
 initiate    ===    variable declaration
 bankai      ===    print call
 function       ===    function declaration
+
+LIST next
