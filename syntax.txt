@@ -1,5 +1,33 @@
 initiate    ===    variable declaration
 bankai      ===    print call
-function       ===    function declaration
+function    ===    function declaration
 
-LIST next
+
+built in functions
+PRINT
+PRINT_RET
+    - (print return instead of printing to the screen, it would return the value that is being printed)
+INPUT
+    - (input for string inputs)
+INPUT_INT
+    - (input int for integer inputs)
+CLEAR
+    - (would clear the screen)
+IS_NUMBER
+    - (checks if element is a number)
+IS_STRING
+    - (checks if element is a string)
+IS_LIST
+    - (checks if element is a list)
+IS_FUNCTION
+    - (checks if element is a fuction)
+APPEND
+    - (add element to a list, mutable)
+POP
+    - (remove an element from a list, also mutable)
+EXTEND
+    - (concatinates two lists together, also mutable)
+
+I am thinking of adding:
+    - File Management functions
+    - Math functions (sqrt, round, pow, add, sub, div, mult, )
