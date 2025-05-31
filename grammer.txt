@@ -2,10 +2,14 @@
 #
 #   MAP =
 #       | means OR
-#       * zero or more of what is before it
+#       * zero or more of what is before it, can be null(optional)
 #       ? optional
+#       + one or more of what is before it, can't null(optional)
+#       : or
 #
 #################################################
+
+statements  : NEWLINE* expr (NEWLINE+ expr)* NEWLINE*
 
 expr        :   KEYWORD:VAR IDENTIFIER EQ expr
             :   comp-expr ((KEYWORD:AND | KEYWORD:OR) comp-expr)*
@@ -37,9 +41,9 @@ atom        :   INT | FLOAT | STRING | IDENTIFIER
 list-expr   :   LSQUARE (expr (COMMA expr)*)? RSQUARE
                
 
-if-expr     :   KEYWORD: IF expr | KEYWORD: THEN expr
-               (KEYWORD: ELIF expr  |   KEYWORD: THEN expr)*
-               (KEYWORD: ELSE expr)?
+if-expr     :   KEYWORD: IF expr | KEYWORD: THEN
+               (expr if-expr-b|if-expr-c)?
+            :  (NEWLINE statements KEYWORD:END if-expr-b|if-expr-c)*
 
 
 for-expr    :   KEYWORD: FOR IDENTIFIER EQ expr KEYWORD: TO expr

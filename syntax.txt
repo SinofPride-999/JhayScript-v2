@@ -28,6 +28,50 @@ POP
 EXTEND
     - (concatinates two lists together, also mutable)
 
+
 I am thinking of adding:
     - File Management functions
     - Math functions (sqrt, round, pow, add, sub, div, mult, )
+
+
+# PURE SYNTAX ==========================
+# PRINT STATEMENTS ====
+PRINT("Hello")
+PRINT("WORLD")
+
+
+# IF-STATEMENTS ====
+# One-liner
+IF <condition-expression> THEN <execution-expression>   
+
+# Multi-liner
+IF <condition-expression> THEN
+    <execution-expression1>
+    <execution-expression2>
+    <execution-expression3>
+END
+
+# FOR-LOOPS ====
+# One-liner
+FOR i = 0 TO 10 THEN <execution-expression>   
+# Optional one-liner to include STEP
+FOR i = 0 TO 10 STEP 2 THEN <execution-expression>
+
+# Multi-liner
+FOR i = 0 TO 10 THEN
+    <execution-expression1>
+    <execution-expression2>
+    <execution-expression3>
+END
+
+
+# FUNCTIONS ====
+# One-liner
+FUN <function-name>() -> <execution-expression>
+
+# Multi-liner
+FUN <name>()
+    <execution-expression1>
+    <execution-expression2>
+    <execution-expression3>
+END
