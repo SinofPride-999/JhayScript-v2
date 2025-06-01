@@ -19,12 +19,15 @@ while True:
     elif text.strip().lower() == "scatter":
         clear_screen()
         continue  # Skip the rest of the loop and show fresh prompt
+    elif text.strip() == "":
+        continue
     
     result, error = basic.run('<stdin>', text)
 
     if error:
         print(error.as_string())
     elif result:
-        print(repr(result))
+        if len(result.elements) == 1:
+            print(repr(result.elements[0]))
     else:
-        print("No result returned")
+        print(repr(result))
