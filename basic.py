@@ -141,6 +141,7 @@ KEYWORDS = [
   'RETURN',
   'CONTINUE',
   'BREAK',
+  'CONST'
 ]
 
 class Token:
@@ -185,8 +186,16 @@ class Lexer:
     while self.current_char != None:
       if self.current_char in ' \t':
         self.advance()
-      elif self.current_char == '#':
-        self.skip_comment()
+      elif self.current_char == ':':
+        # Check if this is the start of a comment
+        next_char = self.text[self.pos.idx + 1] if self.pos.idx + 1 < len(self.text) else None
+        if next_char == ':':
+          self.skip_comment()
+        else:
+          pos_start = self.pos.copy()
+          char = self.current_char
+          self.advance()
+          return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
       elif self.current_char in ';\n':
         tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
         self.advance()
@@ -353,12 +362,17 @@ class Lexer:
     return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
   def skip_comment(self):
-    self.advance()
-
-    while self.current_char != '\n':
-      self.advance()
-
-    self.advance()
+    # Skip both colons
+    self.advance()  # first colon
+    self.advance()  # second colon
+    
+    # Skip everything until newline
+    while self.current_char != None and self.current_char != '\n':
+        self.advance()
+    
+    # Skip the newline character if present
+    if self.current_char == '\n':
+        self.advance()
 
 #######################################
 # NODES
