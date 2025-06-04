@@ -1,199 +1,22 @@
-:: JhayScript Feature Showcase
-:: This script demonstrates all major language features
+initiate name = "Jhay";
+initiate age = 21;
+initiate list_a = [1, 2, 3];
+initiate list_b = [4, 5, 6];
+initiate array = [];
 
-:: 1. Variables and basic operations
-VAR num1 = 10
-VAR num2 = 3.5
-VAR sum = num1 + num2
-PRINT("Sum: " + sum)
-
-:: 2. String operations
-VAR greeting = "Hello"
-VAR name = "JhayScript"
-VAR message = greeting + ", " + name + "!"
-PRINT(message)
-
-:: 3. Lists and list operations
-VAR numbers = [1, 2, 3, 4, 5]
-APPEND(numbers, 6)
-PRINT("Numbers: " + numbers)
-
-:: 4. If/Elif/Else statements
-VAR x = 15
-IF x > 10 THEN
-    PRINT("x is greater than 10")
-ELIF x == 10 THEN
-    PRINT("x is exactly 10")
-ELSE
-    PRINT("x is less than 10")
-END
-
-:: 5. For loops
-PRINT("Counting from 1 to 5:")
-FOR i = 1 TO 5 THEN
-    PRINT(i)
-END
-
-:: With step
-PRINT("Counting from 5 to 1 with step -1:")
-FOR i = 5 TO 1 STEP -1 THEN
-    PRINT(i)
-END
-
-:: 6. While loops
-VAR counter = 3
-PRINT("Countdown:")
-WHILE counter > 0 THEN
-    PRINT(counter)
-    VAR counter = counter - 1
-END
-
-:: 7. Functions
-:: Simple function
-FUN square(n) -> n * n
-PRINT("Square of 5: " + square(5))
-
-:: Multi-line function
-FUN factorial(n)
-    IF n <= 1 THEN RETURN 1 END
-    RETURN n * factorial(n - 1)
-END
-PRINT("Factorial of 5: " + factorial(5))
-
-:: Function with multiple parameters
-FUN power(base, exponent)
-    VAR result = 1
-    FOR i = 1 TO exponent THEN
-        VAR result = result * base
-    END
-    RETURN result
-END
-PRINT("2^5: " + power(2, 5))
-
-:: 8. List processing with functions
-FUN sum_list(lst)
-    VAR total = 0
-    FOR i = 0 TO LEN(lst) THEN
-        VAR total = total + lst/i
-    END
-    RETURN total
-END
-PRINT("Sum of [1,2,3,4]: " + sum_list([1,2,3,4]))
-
-:: 9. Higher-order functions
-FUN apply_twice(f, x) -> f(f(x))
-FUN add_three(x) -> x + 3
-PRINT("Apply add_three twice to 5: " + apply_twice(add_three, 5))
-
-:: 10. Built-in functions
-:: Input
-PRINT("What's your name?")
-VAR user_name = INPUT()
-PRINT("Hello, " + user_name + "!")
-
-:: List operations
-VAR fruits = ["apple", "banana"]
-APPEND(fruits, "cherry")
-PRINT("Fruits: " + fruits)
-PRINT("First fruit: " + fruits/0)
-PRINT("Number of fruits: " + LEN(fruits))
-
-:: Type checking
-PRINT("Is 5 a number? " + IS_NUM(5))
-PRINT("Is 'hello' a string? " + IS_STR("hello"))
-PRINT("Is fruits a list? " + IS_LIST(fruits))
-PRINT("Is square a function? " + IS_FUN(square))
-
-:: 11. Nested control structures
-FOR i = 1 TO 3 THEN
-    PRINT("Outer loop: " + i)
-    VAR j = 1
-    WHILE j <= 2 THEN
-        PRINT("  Inner loop: " + j)
-        IF i == j THEN
-            PRINT("    i equals j!")
-        END
-        VAR j = j + 1
-    END
-END
-
-:: 12. Break and Continue
-PRINT("Break example:")
-FOR i = 1 TO 10 THEN
-    IF i == 5 THEN BREAK END
-    PRINT(i)
-END
-
-PRINT("Continue example:")
-FOR i = 1 TO 5 THEN
-    IF i == 3 THEN CONTINUE END
-    PRINT(i)
-END
-
-:: 13. List mapping
-FUN double(x) -> x * 2
-VAR doubled = map([1, 2, 3], double)
-PRINT("Doubled list: " + doubled)
-
-:: 14. String joining
-VAR words = ["JhayScript", "is", "awesome"]
-PRINT("Joined words: " + join(words, " "))
-
-:: 15. Math operations
-PRINT("PI: " + MATH_PI)
-PRINT("5^3: " + (5 ^ 3))
-PRINT("10 / 3: " + (10 / 3))
-
-:: 16. Boolean logic
-VAR a = TRUE
-VAR b = FALSE
-PRINT("a AND b: " + (a AND b))
-PRINT("a OR b: " + (a OR b))
-PRINT("NOT a: " + (NOT a))
-
-:: 17. Comparison operators
-PRINT("5 == 5: " + (5 == 5))
-PRINT("5 != 5: " + (5 != 5))
-PRINT("5 < 10: " + (5 < 10))
-PRINT("5 > 10: " + (5 > 10))
-PRINT("5 <= 5: " + (5 <= 5))
-PRINT("5 >= 5: " + (5 >= 5))
-
-:: 18. Complex expressions
-PRINT("Complex expression: " + ((5 + 3) * 2 - 4 / 2))
-
-:: 19. Function returning function
-FUN make_adder(x)
-    FUN adder(y) -> x + y
-    RETURN adder
-END
-VAR add5 = make_adder(5)
-PRINT("5 + 10: " + add5(10))
-
-:: 20. Run another script
-:: Assuming we have a file called "hello.jhay" with PRINT("Hello from another script!")
-:: RUN("hello.jhay")
-
-PRINT("\nAll features demonstrated!")
+:: if is_numeric(age) THEN echo("true");
+:: if is_string(name) THEN echo("true");
+:: if is_list(array) THEN echo("true");
 
 
-PRINT     == bankai
-INPUT     == listen
-var       == initiate
-FUN       == function
-RETURN    == release
-IF        == when
-ELIF      == ??
-FOR       == loop
-WHILE     == endure
-THEN      == =>
-BREAK     == shatter
-CONTINUE  == continue
-END       == ??
-APPEND    == append
-LEN       == len
-IS_NUM    == is_num
-IS_STR    == is_str
-IS_LIST   == is_list
-IS_FUN    == is_func
+try {
+    // Whatever that is in here
+} catch(error) {
 
+}
+
+fuck_around {
+
+} find_out(error) {
+    
+}
