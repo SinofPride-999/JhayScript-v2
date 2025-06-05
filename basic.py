@@ -8,6 +8,7 @@ from strings_with_arrows import *
 import string
 import os
 import math
+import random
 
 #######################################
 # CONSTANTS
@@ -1871,6 +1872,10 @@ class BuiltInFunction(BaseFunction):
 
   #####################################
 
+  #####################################
+  # CUSTOM IN-BUILT FUNCTIONS *********************************
+  #####################################
+
   def execute_print(self, exec_ctx):
     print(str(exec_ctx.symbol_table.get('value')))
     return RTResult().success(Number.null)
@@ -2035,6 +2040,650 @@ class BuiltInFunction(BaseFunction):
     return RTResult().success(Number.null)
   execute_run.arg_names = ["fn"]
 
+  #####################################
+  # EXTRA CUSTOM IN-BUILT FUNCTIONS *************************
+  #####################################
+
+  def execute_merge(self, exec_ctx):
+    listA = exec_ctx.symbol_table.get("listA")
+    listB = exec_ctx.symbol_table.get("listB")
+
+    if not isinstance(listA, List) or not isinstance(listB, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Both arguments must be lists",
+        exec_ctx
+      ))
+
+    new_list = listA.copy()
+    new_list.elements.extend(listB.elements)
+    return RTResult().success(new_list)
+  execute_merge.arg_names = ["listA", "listB"]
+
+  def execute_pop(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    if len(list_.elements) == 0:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Cannot pop from empty list",
+        exec_ctx
+      ))
+
+    list_.elements.pop()
+    return RTResult().success(Number.null)
+  execute_pop.arg_names = ["list"]
+
+  def execute_remove(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+    index = exec_ctx.symbol_table.get("index")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "First argument must be list",
+        exec_ctx
+      ))
+
+    if not isinstance(index, Number):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Second argument must be number",
+        exec_ctx
+      ))
+
+    try:
+        list_.elements.pop(index.value)
+    except IndexError:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Index out of bounds",
+        exec_ctx
+      ))
+    return RTResult().success(Number.null)
+  execute_remove.arg_names = ["list", "index"]
+
+  def execute_update(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+    index = exec_ctx.symbol_table.get("index")
+    value = exec_ctx.symbol_table.get("value")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "First argument must be list",
+        exec_ctx
+      ))
+
+    if not isinstance(index, Number):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Second argument must be number",
+        exec_ctx
+      ))
+
+    try:
+      list_.elements[index.value] = value
+    except IndexError:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Index out of bounds",
+        exec_ctx
+      ))
+    return RTResult().success(Number.null)
+  execute_update.arg_names = ["list", "index", "value"]
+
+  def execute_len(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    return RTResult().success(Number(len(list_.elements)))
+  execute_len.arg_names = ["list"]
+
+  def execute_wipe(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    list_.elements = []
+    return RTResult().success(Number.null)
+  execute_wipe.arg_names = ["list"]
+
+  def execute_contains(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+    element = exec_ctx.symbol_table.get("element")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "First argument must be list",
+        exec_ctx
+      ))
+
+    found = any(
+      element.value == el.value if isinstance(el, (Number, String)) else element == el
+      for el in list_.elements
+    )
+    return RTResult().success(Number.true if found else Number.false)
+  execute_contains.arg_names = ["list", "element"]
+
+  def execute_reverse(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    reversed_list = list_.copy()
+    reversed_list.elements = reversed_list.elements[::-1]
+    return RTResult().success(reversed_list)
+  execute_reverse.arg_names = ["list"]
+
+  def execute_sort(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    try:
+      sorted_list = list_.copy()
+      sorted_list.elements = sorted(
+        sorted_list.elements,
+        key=lambda x: x.value if isinstance(x, (Number, String)) else str(x)
+      )
+      return RTResult().success(sorted_list)
+    except TypeError:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Cannot sort list with mixed types",
+        exec_ctx
+      ))
+  execute_sort.arg_names = ["list"]
+
+  def execute_sum(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    total = 0
+    for element in list_.elements:
+      if not isinstance(element, Number):
+        return RTResult().failure(RTError(
+          self.pos_start, self.pos_end,
+          "All elements must be numbers",
+          exec_ctx
+        ))
+      total += element.value
+
+    return RTResult().success(Number(total))
+  execute_sum.arg_names = ["list"]
+
+  def execute_average(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    if len(list_.elements) == 0:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Cannot calculate average of empty list",
+        exec_ctx
+      ))
+
+    total = 0
+    for element in list_.elements:
+      if not isinstance(element, Number):
+        return RTResult().failure(RTError(
+          self.pos_start, self.pos_end,
+          "All elements must be numbers",
+          exec_ctx
+        ))
+      total += element.value
+
+    return RTResult().success(Number(total / len(list_.elements)))
+  execute_average.arg_names = ["list"]
+
+  def execute_min(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    if len(list_.elements) == 0:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Cannot find min of empty list",
+        exec_ctx
+      ))
+
+    min_val = None
+    for element in list_.elements:
+      if not isinstance(element, Number):
+        return RTResult().failure(RTError(
+          self.pos_start, self.pos_end,
+          "All elements must be numbers",
+          exec_ctx
+        ))
+      if min_val is None or element.value < min_val:
+        min_val = element.value
+
+    return RTResult().success(Number(min_val))
+  execute_min.arg_names = ["list"]
+
+  def execute_max(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    if len(list_.elements) == 0:
+      return RTResult().failure(RTError(
+          self.pos_start, self.pos_end,
+          "Cannot find max of empty list",
+          exec_ctx
+      ))
+
+    max_val = None
+    for element in list_.elements:
+        if not isinstance(element, Number):
+            return RTResult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "All elements must be numbers",
+                exec_ctx
+            ))
+        if max_val is None or element.value > max_val:
+            max_val = element.value
+
+    return RTResult().success(Number(max_val))
+  execute_max.arg_names = ["list"]
+
+  def execute_count(self, exec_ctx):
+      list_ = exec_ctx.symbol_table.get("list")
+      element = exec_ctx.symbol_table.get("element")
+
+      if not isinstance(list_, List):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "First argument must be list",
+              exec_ctx
+          ))
+
+      count = 0
+      for el in list_.elements:
+          if isinstance(element, (Number, String)) and isinstance(el, (Number, String)):
+              if element.value == el.value:
+                  count += 1
+          elif element == el:
+              count += 1
+
+      return RTResult().success(Number(count))
+  execute_count.arg_names = ["list", "element"]
+
+  def execute_push(self, exec_ctx):
+      list_ = exec_ctx.symbol_table.get("list")
+      value = exec_ctx.symbol_table.get("value")
+
+      if not isinstance(list_, List):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "First argument must be list",
+              exec_ctx
+          ))
+
+      list_.elements.append(value)
+      return RTResult().success(Number.null)
+  execute_push.arg_names = ["list", "value"]
+
+  #####################################
+  # MATH METHODS
+  #####################################
+
+  def execute_abs(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+
+      if not isinstance(x, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be number",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(abs(x.value)))
+  execute_abs.arg_names = ["x"]
+
+  def execute_round(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+
+      if not isinstance(x, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be number",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(round(x.value)))
+  execute_round.arg_names = ["x"]
+
+  def execute_ceil(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+
+      if not isinstance(x, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be number",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(math.ceil(x.value)))
+  execute_ceil.arg_names = ["x"]
+
+  def execute_floor(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+
+      if not isinstance(x, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be number",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(math.floor(x.value)))
+  execute_floor.arg_names = ["x"]
+
+  def execute_sqrt(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+
+      if not isinstance(x, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be number",
+              exec_ctx
+          ))
+
+      if x.value < 0:
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Cannot take square root of negative number",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(math.sqrt(x.value)))
+  execute_sqrt.arg_names = ["x"]
+
+  def execute_power(self, exec_ctx):
+      x = exec_ctx.symbol_table.get("x")
+      y = exec_ctx.symbol_table.get("y")
+
+      if not isinstance(x, Number) or not isinstance(y, Number):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Both arguments must be numbers",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(x.value ** y.value))
+  execute_power.arg_names = ["x", "y"]
+
+  #####################################
+  # GENERIC UTILITY METHODS
+  #####################################
+
+  def execute_type_of(self, exec_ctx):
+      value = exec_ctx.symbol_table.get("value")
+      
+      if isinstance(value, Number):
+          type_name = "number"
+      elif isinstance(value, String):
+          type_name = "string"
+      elif isinstance(value, List):
+          type_name = "list"
+      elif isinstance(value, BaseFunction):
+          type_name = "function"
+      elif isinstance(value, ErrorValue):
+          type_name = "error"
+      else:
+          type_name = "null"
+          
+      return RTResult().success(String(type_name))
+  execute_type_of.arg_names = ["value"]
+
+  def execute_str(self, exec_ctx):
+      value = exec_ctx.symbol_table.get("value")
+      return RTResult().success(String(str(value)))
+  execute_str.arg_names = ["value"]
+
+  def execute_int(self, exec_ctx):
+      value = exec_ctx.symbol_table.get("value")
+
+      if isinstance(value, String):
+          try:
+              num = int(value.value)
+              return RTResult().success(Number(num))
+          except ValueError:
+              return RTResult().failure(RTError(
+                  self.pos_start, self.pos_end,
+                  "Could not convert string to integer",
+                  exec_ctx
+              ))
+      elif isinstance(value, Number):
+          return RTResult().success(Number(int(value.value)))
+      else:
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Cannot convert to integer",
+              exec_ctx
+          ))
+  execute_int.arg_names = ["value"]
+
+  def execute_float(self, exec_ctx):
+      value = exec_ctx.symbol_table.get("value")
+
+      if isinstance(value, String):
+          try:
+              num = float(value.value)
+              return RTResult().success(Number(num))
+          except ValueError:
+              return RTResult().failure(RTError(
+                  self.pos_start, self.pos_end,
+                  "Could not convert string to float",
+                  exec_ctx
+              ))
+      elif isinstance(value, Number):
+          return RTResult().success(Number(float(value.value)))
+      else:
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Cannot convert to float",
+              exec_ctx
+          ))
+  execute_float.arg_names = ["value"]
+
+  #####################################
+  # STRING METHODS
+  #####################################
+
+  def execute_upper(self, exec_ctx):
+      string = exec_ctx.symbol_table.get("string")
+
+      if not isinstance(string, String):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be string",
+              exec_ctx
+          ))
+
+      return RTResult().success(String(string.value.upper()))
+  execute_upper.arg_names = ["string"]
+
+  def execute_lower(self, exec_ctx):
+      string = exec_ctx.symbol_table.get("string")
+
+      if not isinstance(string, String):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be string",
+              exec_ctx
+          ))
+
+      return RTResult().success(String(string.value.lower()))
+  execute_lower.arg_names = ["string"]
+
+  def execute_strip(self, exec_ctx):
+      string = exec_ctx.symbol_table.get("string")
+
+      if not isinstance(string, String):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be string",
+              exec_ctx
+          ))
+
+      return RTResult().success(String(string.value.strip()))
+  execute_strip.arg_names = ["string"]
+
+  def execute_reverse_str(self, exec_ctx):
+      string = exec_ctx.symbol_table.get("string")
+
+      if not isinstance(string, String):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be string",
+              exec_ctx
+          ))
+
+      return RTResult().success(String(string.value[::-1]))
+  execute_reverse_str.arg_names = ["string"]
+
+  def execute_len_str(self, exec_ctx):
+      string = exec_ctx.symbol_table.get("string")
+
+      if not isinstance(string, String):
+          return RTResult().failure(RTError(
+              self.pos_start, self.pos_end,
+              "Argument must be string",
+              exec_ctx
+          ))
+
+      return RTResult().success(Number(len(string.value)))
+  execute_len_str.arg_names = ["string"]
+
+  #####################################
+  # ALGORITHMIC UTILITIES
+  #####################################
+
+  def execute_is_prime(self, exec_ctx):
+    n = exec_ctx.symbol_table.get("n")
+
+    if not isinstance(n, Number):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be number",
+        exec_ctx
+      ))
+
+    if n.value <= 1:
+      return RTResult().success(Number.false)
+    if n.value <= 3:
+      return RTResult().success(Number.true)
+    if n.value % 2 == 0 or n.value % 3 == 0:
+      return RTResult().success(Number.false)
+
+    i = 5
+    while i * i <= n.value:
+      if n.value % i == 0 or n.value % (i + 2) == 0:
+        return RTResult().success(Number.false)
+      i += 6
+
+    return RTResult().success(Number.true)
+  execute_is_prime.arg_names = ["n"]
+
+  def execute_unique(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    seen = []
+    unique_elements = []
+    for element in list_.elements:
+      if isinstance(element, (Number, String)):
+        if element.value not in seen:
+          seen.append(element.value)
+          unique_elements.append(element)
+      elif element not in seen:
+        seen.append(element)
+        unique_elements.append(element)
+
+    new_list = List(unique_elements)
+    return RTResult().success(new_list)
+  execute_unique.arg_names = ["list"]
+
+  def execute_shuffle(self, exec_ctx):
+    list_ = exec_ctx.symbol_table.get("list")
+
+    if not isinstance(list_, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Argument must be list",
+        exec_ctx
+      ))
+
+    shuffled = list_.copy()
+    random.shuffle(shuffled.elements)
+    return RTResult().success(shuffled)
+  execute_shuffle.arg_names = ["list"]
+
+#####################################
+# EXTRA CUSTOM IN-BUILT FUNCTIONS *************************
+#####################################
+
 BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
 BuiltInFunction.input       = BuiltInFunction("input")
@@ -2049,6 +2698,44 @@ BuiltInFunction.pop         = BuiltInFunction("pop")
 BuiltInFunction.extend      = BuiltInFunction("extend")
 BuiltInFunction.len					= BuiltInFunction("len")
 BuiltInFunction.run					= BuiltInFunction("run")
+
+#####################################
+# CUSTOM IN-BUILT FUNCTIONS *********************************
+#####################################
+
+BuiltInFunction.merge       = BuiltInFunction("merge")
+BuiltInFunction.pop         = BuiltInFunction("pop")
+BuiltInFunction.remove      = BuiltInFunction("remove")
+BuiltInFunction.update      = BuiltInFunction("update")
+BuiltInFunction.len         = BuiltInFunction("len")
+BuiltInFunction.wipe        = BuiltInFunction("wipe")
+BuiltInFunction.contains    = BuiltInFunction("contains")
+BuiltInFunction.reverse     = BuiltInFunction("reverse")
+BuiltInFunction.sort        = BuiltInFunction("sort")
+BuiltInFunction.sum         = BuiltInFunction("sum")
+BuiltInFunction.average     = BuiltInFunction("average")
+BuiltInFunction.min         = BuiltInFunction("min")
+BuiltInFunction.max         = BuiltInFunction("max")
+BuiltInFunction.count       = BuiltInFunction("count")
+BuiltInFunction.push        = BuiltInFunction("push")
+BuiltInFunction.abs         = BuiltInFunction("abs")
+BuiltInFunction.round       = BuiltInFunction("round")
+BuiltInFunction.ceil        = BuiltInFunction("ceil")
+BuiltInFunction.floor       = BuiltInFunction("floor")
+BuiltInFunction.sqrt        = BuiltInFunction("sqrt")
+BuiltInFunction.power       = BuiltInFunction("power")
+BuiltInFunction.type_of     = BuiltInFunction("type_of")
+BuiltInFunction.str         = BuiltInFunction("str")
+BuiltInFunction.int         = BuiltInFunction("int")
+BuiltInFunction.float       = BuiltInFunction("float")
+BuiltInFunction.upper       = BuiltInFunction("upper")
+BuiltInFunction.lower       = BuiltInFunction("lower")
+BuiltInFunction.strip       = BuiltInFunction("strip")
+BuiltInFunction.reverse_str = BuiltInFunction("reverse_str")
+BuiltInFunction.len_str     = BuiltInFunction("len_str")
+BuiltInFunction.is_prime    = BuiltInFunction("is_prime")
+BuiltInFunction.unique      = BuiltInFunction("unique")
+BuiltInFunction.shuffle     = BuiltInFunction("shuffle")
 
 #######################################
 # CONTEXT
@@ -2388,6 +3075,41 @@ global_symbol_table.set("pop", BuiltInFunction.pop)
 global_symbol_table.set("extend", BuiltInFunction.extend)
 global_symbol_table.set("len", BuiltInFunction.len)
 global_symbol_table.set("awake", BuiltInFunction.run)
+
+# EXTRA IN-BUILT FUNCTIONS
+global_symbol_table.set("merge", BuiltInFunction.merge)
+global_symbol_table.set("pop", BuiltInFunction.pop)
+global_symbol_table.set("remove", BuiltInFunction.remove)
+global_symbol_table.set("update", BuiltInFunction.update)
+global_symbol_table.set("len", BuiltInFunction.len)
+global_symbol_table.set("wipe", BuiltInFunction.wipe)
+global_symbol_table.set("contains", BuiltInFunction.contains)
+global_symbol_table.set("reverse", BuiltInFunction.reverse)
+global_symbol_table.set("sort", BuiltInFunction.sort)
+global_symbol_table.set("sum", BuiltInFunction.sum)
+global_symbol_table.set("average", BuiltInFunction.average)
+global_symbol_table.set("min", BuiltInFunction.min)
+global_symbol_table.set("max", BuiltInFunction.max)
+global_symbol_table.set("count", BuiltInFunction.count)
+global_symbol_table.set("push", BuiltInFunction.push)
+global_symbol_table.set("abs", BuiltInFunction.abs)
+global_symbol_table.set("round", BuiltInFunction.round)
+global_symbol_table.set("ceil", BuiltInFunction.ceil)
+global_symbol_table.set("floor", BuiltInFunction.floor)
+global_symbol_table.set("sqrt", BuiltInFunction.sqrt)
+global_symbol_table.set("power", BuiltInFunction.power)
+global_symbol_table.set("type_of", BuiltInFunction.type_of)
+global_symbol_table.set("str", BuiltInFunction.str)
+global_symbol_table.set("int", BuiltInFunction.int)
+global_symbol_table.set("float", BuiltInFunction.float)
+global_symbol_table.set("upper", BuiltInFunction.upper)
+global_symbol_table.set("lower", BuiltInFunction.lower)
+global_symbol_table.set("strip", BuiltInFunction.strip)
+global_symbol_table.set("reverse_str", BuiltInFunction.reverse_str)
+global_symbol_table.set("len_str", BuiltInFunction.len_str)
+global_symbol_table.set("is_prime", BuiltInFunction.is_prime)
+global_symbol_table.set("unique", BuiltInFunction.unique)
+global_symbol_table.set("shuffle", BuiltInFunction.shuffle)
 
 def run(fn, text):
   # Generate tokens

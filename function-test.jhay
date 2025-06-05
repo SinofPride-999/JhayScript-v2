@@ -1,0 +1,422 @@
+:: ========================================
+:: JhayScript Standard Library Function Tests
+:: ========================================
+
+:: --- MERGE ---
+initiate listA = [1, 2, 3];
+initiate listB = [4, 5, 6];
+initiate mergedList = merge(listA, listB);
+
+echo("========================");
+echo("MERGE Two Lists:");
+echo("listA: " + str(listA));
+echo("listB: " + str(listB));
+echo("mergedList: " + str(mergedList));
+echo("========================");
+
+
+:: --- POP ---
+initiate popList = [10, 20, 30];
+
+echo("========================");
+echo("POP from a List:");
+echo("Before pop: " + str(popList));
+pop(popList);
+
+echo("After pop: " + str(popList));
+
+:: Edge: pop from empty list
+initiate emptyList1 = [];
+
+echo("Attempt pop from empty list:");
+:: pop(emptyList1);  :: should raise runtime error
+echo("========================");
+
+
+:: --- REMOVE ---
+initiate remList = [100, 200, 300, 400];
+
+echo("========================");
+echo("REMOVE by Index:");
+echo("Before remove: " + str(remList));
+remove(remList, 2);    :: remove element at index 2 (300)
+echo("After remove index 2: " + str(remList));
+
+:: Edge: index out of bounds
+echo("Attempt remove at invalid index:");
+:: remove(remList, 99);  :: should raise runtime error
+
+:: Edge: index not a number
+echo("Attempt remove with non-number index:");
+:: remove(remList, "two");  :: should raise runtime error
+echo("========================");
+
+
+:: --- UPDATE ---
+initiate updList = [7, 8, 9];
+
+echo("========================");
+echo("UPDATE List Element:");
+echo("Before update: " + str(updList));
+update(updList, 1, 80);
+echo("After update index 1 to 80: " + str(updList));
+
+:: Edge: index out of bounds
+echo("Attempt update at invalid index:");
+:: update(updList, 5, 500);  :: should raise runtime error
+
+:: Edge: index not a number
+echo("Attempt update with non-number index:");
+:: update(updList, "one", 100);  :: should raise runtime error
+echo("========================");
+
+
+:: --- LEN ---
+initiate lenList = [9, 8, 7, 6];
+
+echo("========================");
+echo("LENGTH of List:");
+echo("lenList: " + str(lenList));
+echo("Length: " + str(len(lenList)));
+
+:: Edge: non-list argument
+echo("Attempt len on non-list:");
+:: len(123);  :: should raise runtime error
+echo("========================");
+
+
+:: --- WIPE ---
+initiate wipeList = [1, 2, 3, 4];
+
+echo("========================");
+echo("WIPE List:");
+echo("Before wipe: " + str(wipeList));
+wipe(wipeList);
+echo("After wipe: " + str(wipeList));
+
+:: Edge: wipe an already empty list
+initiate emptyList2 = [];
+
+echo("Wipe empty list:");
+wipe(emptyList2);
+echo("Result: " + str(emptyList2));
+echo("========================");
+
+
+:: --- CONTAINS ---
+initiate containList = [5, 6, 7, 8];
+
+echo("========================");
+echo("CONTAINS in List:");
+echo("containList: " + str(containList));
+echo("Contains 7? " + str(contains(containList, 7)));
+echo("Contains 42? " + str(contains(containList, 42)));
+
+:: Edge: first arg not a list
+echo("Attempt contains on non-list:");
+:: contains("not a list", 5);  :: should raise runtime error
+echo("========================");
+
+
+:: --- REVERSE ---
+initiate revList = [1, 2, 3, 4];
+
+echo("========================");
+echo("REVERSE List:");
+echo("Before reverse: " + str(revList));
+
+initiate reversedList = reverse(revList);
+
+echo("Reversed: " + str(reversedList));
+:: Edge: reverse empty list
+
+initiate emptyList3 = [];
+
+echo("Reverse empty list: " + str(reverse(emptyList3)));
+:: Edge: non-list arg
+echo("Attempt reverse on non-list:");
+:: reverse("abc");  :: should raise runtime error
+echo("========================");
+
+:: --- SORT ---
+initiate sortNum = [3, 1, 4, 2];
+initiate sortStr = ["b", "d", "a", "c"];
+initiate sortMix = [1, "two", 3];
+
+echo("========================");
+echo("SORT List of Numbers:");
+echo("Before: " + str(sortNum));
+echo("After: " + str(sort(sortNum)));
+echo("------------------------");
+echo("SORT List of Strings:");
+echo("Before: " + str(sortStr));
+echo("After: " + str(sort(sortStr)));
+echo("------------------------");
+echo("SORT Mixed Types (should error):");
+:: sort(sortMix);  :: should raise runtime error
+echo("========================");
+
+
+:: --- SUM ---
+initiate sumList = [2, 4, 6, 8];
+
+echo("========================");
+echo("SUM of List:");
+echo("sumList: " + str(sum(sumList)));
+
+:: Edge: contains non-number
+initiate badSum = [1, "two", 3];
+
+echo("Attempt sum on mixed types:");
+:: sum(badSum);  :: should raise runtime error
+echo("========================");
+
+
+:: --- AVERAGE ---
+initiate avgList = [5, 10, 15];
+
+echo("========================");
+echo("AVERAGE of List:");
+echo("avgList: " + str(avgList));
+echo("Average: " + str(average(avgList)));
+
+:: Edge: empty list
+initiate emptyList4 = [];
+
+echo("Attempt average on empty list:");
+:: average(emptyList4);  :: should raise runtime error
+
+:: Edge: mixed types
+initiate badAvg = [1, 2, "three"];
+
+echo("Attempt average on mixed types:");
+:: average(badAvg);  :: should raise runtime error
+echo("========================");
+
+
+:: --- MIN ---
+initiate minList = [12, 3, 8, 5];
+
+echo("========================");
+echo("MIN of List:");
+echo("minList: " + str(min(minList)));
+:: Edge: empty list
+echo("Attempt min on empty list:");
+:: min([]);  :: should raise runtime error
+
+:: Edge: non-number element
+initiate badMin = [1, "two", 3];
+
+echo("Attempt min on mixed types:");
+:: min(badMin);  :: should raise runtime error
+echo("========================");
+
+
+:: --- MAX ---
+initiate maxList = [12, 3, 8, 5];
+
+echo("========================");
+echo("MAX of List:");
+echo("maxList: " + str(max(maxList)));
+:: Edge: empty list
+echo("Attempt max on empty list:");
+:: max([]);  :: should raise runtime error
+
+:: Edge: non-number element
+initiate badMax = [1, "two", 3];
+
+echo("Attempt max on mixed types:");
+:: max(badMax);  :: should raise runtime error
+echo("========================");
+
+
+:: --- COUNT ---
+initiate countList = [1, 2, 2, 3, 2];
+
+echo("========================");
+echo("COUNT occurrences:");
+echo("countList: " + str(countList));
+echo("Count of 2: " + str(count(countList, 2)));
+echo("Count of 5: " + str(count(countList, 5)));
+
+:: Edge: first arg not list
+echo("Attempt count on non-list:");
+:: count("string", 5);  :: should raise runtime error
+echo("========================");
+
+
+:: --- PUSH ---
+initiate pushList = [9, 9];
+
+echo("========================");
+echo("PUSH to List:");
+echo("Before push: " + str(pushList));
+push(pushList, 99);
+echo("After push 99: " + str(pushList));
+
+:: Edge: first arg not list
+echo("Attempt push on non-list:");
+:: push("no-list", 5);  :: should raise runtime error
+echo("========================");
+
+
+:: --- ABS ---
+echo("========================");
+echo("ABS Function:");
+echo("abs( -10 ) = " + str(abs(-10)));
+echo("abs(  0 ) = " + str(abs(0)));
+echo("========================");
+
+:: Edge: non-number
+echo("Attempt abs on non-number:");
+:: abs("abc");  :: should raise runtime error
+echo("========================");
+
+
+:: --- ROUND ---
+echo("========================");
+echo("ROUND Function:");
+echo("round( 3.6 ) = " + str(round(3.6)));
+echo("round(-2.3 ) = " + str(round(-2.3)));
+echo("========================");
+
+:: Edge: non-number
+echo("Attempt round on non-number:");
+:: round("xyz");  :: should raise runtime error
+echo("========================");
+
+
+:: --- CEIL & FLOOR ---
+echo("========================");
+echo("CEIL & FLOOR:");
+echo("ceil( 2.1 ) = " + str(ceil(2.1)));
+echo("floor( 2.9 ) = " + str(floor(2.9)));
+echo("========================");
+
+:: Edge: non-number
+echo("Attempt ceil/floor on non-number:");
+:: ceil("a");  :: should raise runtime error
+:: floor("b");  :: should raise runtime error
+echo("========================");
+
+
+:: --- SQRT ---
+echo("========================");
+echo("SQRT Function:");
+echo("sqrt( 16 ) = " + str(sqrt(16)));
+echo("========================");
+
+:: Edge: negative number
+echo("Attempt sqrt on negative:");
+:: sqrt(-4);  :: should raise runtime error
+
+:: Edge: non-number
+echo("Attempt sqrt on non-number:");
+:: sqrt("four");  :: should raise runtime error
+echo("========================");
+
+
+:: --- POWER ---
+echo("========================");
+echo("POWER Function:");
+echo("power( 2, 5 ) = " + str(power(2, 5)));
+echo("========================");
+
+:: Edge: non-number args
+echo("Attempt power with non-number:");
+:: power(2, "three");  :: should raise runtime error
+echo("========================");
+
+
+:: --- TYPE_OF ---
+echo("========================");
+echo("TYPE_OF Function:");
+echo("type_of( 123 ) = " + type_of(123));
+echo("type_of( 'abc' ) = " + type_of("abc"));
+echo("type_of( [1,2,3] ) = " + type_of([1, 2, 3]));
+echo("========================");
+
+
+:: --- STR, INT, FLOAT ---
+echo("========================");
+echo("STR, INT, FLOAT Conversions:");
+echo("str( 123 ) = " + str(123));
+echo("str([1,2]) = " + str([1, 2]));
+echo("int( '42' ) = " + str(int("42")));
+echo("float( '3.14' ) = " + str(float("3.14")));
+echo("========================");
+
+:: Edge: invalid conversions
+echo("Attempt int on invalid string:");
+:: int("abc");    :: should raise runtime error
+echo("Attempt float on invalid string:");
+:: float("def");  :: should raise runtime error
+echo("========================");
+
+
+:: --- STRING METHODS ---
+initiate strVal = "  Hello JhayScript!  ";
+
+echo("========================");
+echo("STRING Methods:");
+echo("upper: " + upper(strVal));
+echo("lower: " + lower(strVal));
+echo("strip: " + strip(strVal));
+echo("reverse_str: " + reverse_str("abcde"));
+echo("len_str: " + str(len_str("abcdef")));
+echo("========================");
+
+:: Edge: non-string argument
+echo("Attempt upper on non-string:");
+:: upper(123);   :: should raise runtime error
+echo("========================");
+
+
+:: --- IS_PRIME ---
+echo("========================");
+echo("IS_PRIME Function:");
+echo("is_prime( 2 ) = " + str(is_prime(2)));
+echo("is_prime( 15 ) = " + str(is_prime(15)));
+echo("is_prime( 1 ) = " + str(is_prime(1)));
+echo("========================");
+
+:: Edge: non-number argument
+echo("Attempt is_prime on non-number:");
+:: is_prime("ten");  :: should raise runtime error
+echo("========================");
+
+
+:: --- UNIQUE ---
+initiate dupList = [1, 2, 2, "a", "a", 3];
+
+echo("========================");
+echo("UNIQUE Function:");
+echo("dupList: " + str(dupList));
+echo("unique(dupList) = " + str(unique(dupList)));
+
+:: Edge: empty list
+echo("unique([]) = " + str(unique([])));
+
+:: Edge: non-list argument
+echo("Attempt unique on non-list:");
+:: unique("notalist");  :: should raise runtime error
+echo("========================");
+
+
+:: --- SHUFFLE ---
+initiate shuffleList = [1, 2, 3, 4, 5];
+
+echo("========================");
+echo("SHUFFLE Function:");
+echo("Before shuffle: " + str(shuffleList));
+
+initiate shuffledResult = shuffle(shuffleList);
+
+echo("After shuffle: " + str(shuffledResult));
+
+:: Edge: non-list argument
+echo("Attempt shuffle on non-list:");
+:: shuffle(123);  :: should raise runtime error
+echo("========================");
+
+:: End of Standard Library Tests
