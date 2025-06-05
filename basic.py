@@ -1642,14 +1642,9 @@ class String(Value):
     self.value = value
 
   def added_to(self, other):
-    if isinstance(other, (String, ErrorValue)):
-      # Handle both String and ErrorValue concatenation
-      return String(f"{self.value}{str(other)}").set_context(self.context), None
-    elif isinstance(other, Number):
-      # Allow concatenation with numbers
-      return String(f"{self.value}{other.value}").set_context(self.context), None
-    else:
-      return None, Value.illegal_operation(self, other)
+    if isinstance(other, (String, Number, ErrorValue)):
+        return String(f"{self.value}{other}").set_context(self.context), None
+    return None, Value.illegal_operation(self, other)
 
   def multed_by(self, other):
     if isinstance(other, Number):
@@ -1774,27 +1769,44 @@ class BaseFunction(Value):
     return res.success(None)
   
 class ErrorValue(Value):
-  def __init__(self, error):  # Changed from value to error
-    super().__init__()
-    self.error = error  # Store the RTError object directly
-      
-  def copy(self):
-    copy = ErrorValue(self.error)  # Copy the error
-    copy.set_pos(self.pos_start, self.pos_end)
-    copy.set_context(self.context)
-    return copy
-  
-  def added_to(self, other):
-    if isinstance(other, String):
-        return String(f"{other.value}{str(self)}").set_context(self.context), None
-    return None, Value.illegal_operation(self, other)
+    def __init__(self, error):
+        super().__init__()
+        self.error = error
+        # Add quick-access properties
+        self.properties = {
+            "message": String(f"{error.error_name}: {error.details}"),
+            "line": Number(error.pos_start.ln + 1),
+            "column": Number(error.pos_start.col + 1),
+            "file": String(error.pos_start.fn)
+        }
+        
+    def copy(self):
+        copy = ErrorValue(self.error)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
+    
+    def get_property(self, prop_name):
+        if prop_name in self.properties:
+            return self.properties[prop_name]
+        return None
 
-  def __str__(self):
-    # Format the error message cleanly
-    return f"{self.error.error_name}: {self.error.details}"
+    def added_to(self, other):
+        if isinstance(other, String):
+            return String(f"{other.value}{self}").set_context(self.context), None
+        return None, Value.illegal_operation(self, other)
 
-  def __repr__(self):
-    return f"ErrorValue({str(self)})"  # Use string representation
+    def __str__(self):
+        # Include arrow pointers for better debugging
+        error = self.error
+        return (
+            f"{error.error_name}: {error.details}\n"
+            f"File {error.pos_start.fn}, line {error.pos_start.ln + 1}\n"
+            f"{string_with_arrows(error.pos_start.ftxt, error.pos_start, error.pos_end)}"
+        )
+
+    def __repr__(self):
+        return f"ErrorValue({self.error.error_name})"
 
 class Function(BaseFunction):
   def __init__(self, name, body_node, arg_names, should_auto_return):
@@ -2101,17 +2113,17 @@ class Interpreter:
     try_value = res.register(self.visit(node.try_body, context))
 
     if res.error:
-      # Create ErrorValue wrapper
-      error_value = ErrorValue(res.error).set_context(context)
-      context.symbol_table.set(node.catch_var.value, error_value)
-      
-      # Clear the error so execution can continue
-      res.error = None
-      
-      # Execute catch block
-      catch_value = res.register(self.visit(node.catch_body, context))
-      if res.error: return res
-      return res.success(catch_value)
+        error_value = ErrorValue(res.error).set_context(context)
+        
+        # Store both the error object and its properties
+        context.symbol_table.set(node.catch_var.value, error_value)
+        for prop_name, prop_value in error_value.properties.items():
+            context.symbol_table.set(f"{node.catch_var.value}_{prop_name}", prop_value)
+        
+        res.error = None
+        catch_value = res.register(self.visit(node.catch_body, context))
+        if res.error: return res
+        return res.success(catch_value)
     
     return res.success(try_value)
 
@@ -2394,3 +2406,18 @@ def run(fn, text):
   result = interpreter.visit(ast.node, context)
 
   return result.value, result.error
+
+
+def validate(text):
+  """Check for syntax errors without execution"""
+  # Lexer (Tokenization)
+  lexer = Lexer('<stdin>', text)
+  tokens, error = lexer.make_tokens()
+  if error: return None, error
+  
+  # Parser (AST Generation)
+  parser = Parser(tokens)
+  ast = parser.parse()
+  if ast.error: return None, ast.error
+  
+  return "Build successful", None
