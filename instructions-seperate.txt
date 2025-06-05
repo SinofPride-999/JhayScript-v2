@@ -1,3 +1,39 @@
+I want to clean this code, don't re-write everything, I want to seperate all these into sperate files.
+This is my project dir structure:
+jhayscript/
+├── __init__.py
+├── __pycache__/
+├── core/
+│   ├── __init__.py
+│   ├── lexer.py
+│   ├── parser.py
+│   ├── interpreter.py
+│   ├── nodes.py
+│   ├── values.py
+│   └── errors.py
+├── modules/
+│   ├── __init__.py
+│   ├── algo.py       # Sorting/searching algorithms
+│   ├── time.py       # Time functions
+│   └── debug.py      # Debug utilities
+├── jhayscript.py     # Shell/REPL
+└── strings_with_arrows.py
+
+I want you to spereate my code, into these files:
+jhayscript/
+├── __init__.py
+├── shell.py               # Replaces jhayscript.py
+├── basic.py               # Main interpreter logic
+├── lexer.py               # Tokenizer
+├── parser.py              # Parses tokens into an AST
+├── runtime.py             # Execution environment or interpreter runtime
+├── strings_with_arrows.py # For detailed error visualization
+├── error.py               # Custom error classes (if any)
+├── verbose_tool.py        # Optional verbose/debugging tools
+├── utils.py               # Any shared helper functions
+└── tokens.py              # Token types/constants (optional)
+
+
 #######################################
 # IMPORTS
 #######################################
@@ -3151,3 +3187,6 @@ def validate(text):
   if ast.error: return None, ast.error
   
   return "Build successful", None
+
+
+Don't re-write it, just tell me what classes I should move to the spereate files, and tell me the imports to use in those files. Don't re-write everything.

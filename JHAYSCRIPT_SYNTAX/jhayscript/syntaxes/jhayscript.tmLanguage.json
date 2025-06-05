@@ -113,7 +113,7 @@
         },
         {
           "name": "support.function.builtin.jhayscript",
-          "match": "\\b(echo|echo_ret|listen|listen_int|die|CLEAR|CLS|is_numeric|is_string|is_list|is_function|append|pop|extend|len|awake)\\b"
+          "match": "\\b(echo|echo_ret|listen|listen_int|die|CLEAR|CLS|is_numeric|is_string|is_list|is_function|append|pop|extend|len|awake|import|from)\\b"
         }
       ]
     },

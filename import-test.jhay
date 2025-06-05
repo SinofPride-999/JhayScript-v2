@@ -1,0 +1,20 @@
+:: Default import
+import algo from 'algo';
+
+initiate sorted_list = algo.bubble_sort([5, 3, 8, 1, 2]);
+echo(sorted_list);  :: [1, 2, 3, 5, 8]
+
+:: Named imports
+import { bubble_sort, quick_sort } from 'algo';
+
+initiate list1 = [5, 3, 8, 1, 2];
+initiate list2 = [9, 4, 7, 2, 5];
+
+echo(bubble_sort(list1));
+echo(quick_sort(list2));
+
+:: Alias imports
+import { bubble_sort as sort } from 'algo';
+
+initiate my_list = [5, 3, 8, 1, 2];
+echo(sort(my_list));
