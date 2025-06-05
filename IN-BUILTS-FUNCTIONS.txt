@@ -1,0 +1,224 @@
+
+BUILT IN'S ***
+
+(1). LIST METHODS ||
+============================================================
+
+1.  merge(list_a, list_b)
+    ->  returns a new exteded list
+
+2.  pop(list)
+    ->  removes the last value of in list
+
+3.  remove(list, @index)
+    ->  removes the value of the targeted element at it's index in list
+
+4.  update(list, @index, value)
+    ->  updates the value of the targeted element at it's index in list
+
+5.  len(list)
+    ->  returns the lenght of list
+
+6.  wipe(list)
+    ->  empties the list
+
+7.  contains(list, element)
+    ->  returns boolean based on whether the target element exists
+
+8.  reverse(list)
+    ->  returns reverse form of list
+
+9.  sort(list)
+    ->  returns sorted form of list
+
+10. sum(list)
+    ->  returns total of numeric values in list
+
+11. average(list)
+    ->  returns the avergae of numeric values in list
+
+12. min(list)
+    ->  returns the smallest number in the list
+
+13. max(list)
+    ->  returns the largest number in the list
+
+14. count(list, element)
+    ->  returns number of times target element appears
+
+15. push(list, value)
+    ->  appends value to list
+
+============================================================
+
+
+(2). MATH METHODS    ||
+============================================================
+
+1. abs(x)
+  -> absolute value
+
+2. round(x)
+  -> round to nearest integer
+
+3. ceil(x)
+  -> round up
+
+4. floor(x)
+  -> round down
+
+5. sqrt(x)
+  -> square root
+
+6. power(x, y)
+  -> x raised to the power of y
+
+============================================================
+
+
+(3). GENERIC UTILIT METHODS    ||
+============================================================
+
+1. type_of(value)
+  -> returns the type of value
+
+2. str(value)
+  -> converts value to a string
+
+3. int(value)
+  -> converts value to integer
+
+4. float(value)
+  -> converts value to float
+
+============================================================
+
+
+(4). STRING METHODS    ||
+============================================================
+
+1. upper(string)
+  -> converts to upper case
+
+2. lower(string)
+  -> converts to lower case
+
+3. strip(string)
+  -> removes whitespaces
+
+4. reverse_str(string)
+  -> reverse string
+
+5. len_str(string)
+  -> returns lenght of string
+
+============================================================
+
+
+(5). ALGORITHMIC UTILITIES   ||
+============================================================
+
+1. is_prime(n)
+  -> returns a boolean if n is primes or not
+
+2. unique(list)
+  -> removes duplicates
+
+3. shuffle(list)
+  -> randomizes the order of elements in list
+
+============================================================
+
+
+
+MODULE BASED **
+
+(1). SORTING ALGOITHMS -> ALGO MODULE   ||
+============================================================
+
+1. bubble_sort(list)
+  -> repeatedly steps through the list,
+  -> compares adjacent elements,
+  -> swaps them if they're in the wrong order.
+
+2. selection_sort(list)
+  -> repeatedly finds the min element,
+  -> moves it to the sorted portion.
+
+3. insertion_sort(list)
+  -> builds the sorted list one item at a time
+  -> by inserting into the correct position.
+
+4. merge_sort(list)
+  -> divides the list into halves,
+  -> sorts them,
+  -> and merges them
+
+5. quick_sort(list)
+  -> picks a pivot,
+  -> partitions the list,
+  -> and recursively sorts the parts.
+
+6. count_sort(list)
+  -> counts occurrences
+  -> and places values based on count
+
+7. radix_sort(list)
+  -> sorts numbers digit by digit.
+
+============================================================
+
+
+(2). SEARCHING ALGORITHMS -> ALGO MODULE   ||
+============================================================
+
+1. linear_search(list, target)
+  -> checks each item one by one
+
+2. binary_search(list, target)
+  -> repeatedly divides the sorted list in half
+  -> to find the target
+
+3. jump_search(list, target)
+  -> jumps ahead by fixed steps.
+  -> then does linear search in the block
+
+4. interpolation_search(list, target)
+  -> improves on binary search by guessing the position
+
+5. exponential_search(list, target)
+  -> grows search bounds exponentially,
+  -> then uses binary search
+
+
+============================================================
+
+
+(3). TIME MODULE    ||
+============================================================
+
+1. now()
+  -> current timestamp or datetime string
+
+2. timestamp()
+  -> Unix timestamp
+
+3. sleep(seconds)
+  -> pause execution
+
+4. format_time()
+  -> format time string
+
+============================================================
+
+(4). DEBUG MODULE    ||
+============================================================
+
+1. debug(value)
+  -> Logs a debug representation
+
+2. trace()
+  -> prints current call stack
+
+============================================================
+

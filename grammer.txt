@@ -1,14 +1,14 @@
 statements  : NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
 
-statement		: KEYWORD:RETURN expr?
-						: KEYWORD:CONTINUE
-						: KEYWORD:BREAK
+statement		: KEYWORD:return expr?
+						: KEYWORD:continue
+						: KEYWORD:break
 						: expr
 
-expr        : KEYWORD:VAR IDENTIFIER EQ expr
-            : comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*
+expr        : KEYWORD:initiate IDENTIFIER EQ expr
+            : comp-expr ((KEYWORD:and|KEYWORD:or) comp-expr)*
 
-comp-expr   : NOT comp-expr
+comp-expr   : nor comp-expr
             : arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
 
 arith-expr  :	term ((PLUS|MINUS) term)*
@@ -32,28 +32,83 @@ atom        : INT|FLOAT|STRING|IDENTIFIER
 
 list-expr   : LSQUARE (expr (COMMA expr)*)? RSQUARE
 
-if-expr     : KEYWORD:IF expr KEYWORD:THEN
+if-expr     : KEYWORD:if expr KEYWORD:{
               (statement if-expr-b|if-expr-c?)
-            | (NEWLINE statements KEYWORD:END|if-expr-b|if-expr-c)
+            | (NEWLINE statements KEYWORD:}|if-expr-b|if-expr-c)
 
-if-expr-b   : KEYWORD:ELIF expr KEYWORD:THEN
+if-expr-b   : KEYWORD:elif expr KEYWORD:{
               (statement if-expr-b|if-expr-c?)
-            | (NEWLINE statements KEYWORD:END|if-expr-b|if-expr-c)
+            | (NEWLINE statements KEYWORD:}|if-expr-b|if-expr-c)
 
-if-expr-c   : KEYWORD:ELSE
+if-expr-c   : KEYWORD:else
               statement
-            | (NEWLINE statements KEYWORD:END)
+            | (NEWLINE statements KEYWORD:})
 
-for-expr    : KEYWORD:FOR IDENTIFIER EQ expr KEYWORD:TO expr 
-              (KEYWORD:STEP expr)? KEYWORD:THEN
+for-expr    : KEYWORD:for IDENTIFIER EQ expr KEYWORD:to expr 
+              (KEYWORD:step expr)? KEYWORD:{
               statement
-            | (NEWLINE statements KEYWORD:END)
+            | (NEWLINE statements KEYWORD:})
 
-while-expr  : KEYWORD:WHILE expr KEYWORD:THEN
+while-expr  : KEYWORD:while expr KEYWORD:{
               statement
-            | (NEWLINE statements KEYWORD:END)
+            | (NEWLINE statements KEYWORD:})
 
-func-def    : KEYWORD:FUN IDENTIFIER?
+func-def    : KEYWORD:function IDENTIFIER? KEYWORD:{
               LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
               (ARROW expr)
-            | (NEWLINE statements KEYWORD:END)
+            | (NEWLINE statements KEYWORD:})
+
+
+
+PRINT     == echo
+INPUT     == listen
+var       == initiate
+FUN       == function
+RETURN    == return
+IF        == if
+ELIF      == elif
+ELSE      == else
+FOR       == for
+WHILE     == while
+THEN      == THEN
+BREAK     == break
+CONTINUE  == continue
+END       == END
+APPEND    == push
+pop       == pop    -> Now would remove the last element
+remove    == remove -> Now would remove an element at it's index
+updadte   == update -> Now would update the value of the element at it's index
+LEN       == len
+IS_NUM    == is_numeric
+IS_STR    == is_string
+IS_LIST   == is_list
+IS_FUN    == is_func
+AND       == and
+OR        == or
+NOT       == not
+TO        == to
+STEP      == step
+PRINT_RET == echo_ret
+INPUT_RET == listen_int
+CLEAR     == die
+CLS       == die
+EXTEND    == merge
+RUN       == awake
+NULL      == Null
+TRUE      == True
+FALSE     == False
+->        == ->
+
+try {
+
+} catch {
+
+}
+
+should be 
+
+fuck_aroud {
+
+} find_out {
+  
+}

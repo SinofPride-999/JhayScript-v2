@@ -1,0 +1,10 @@
+try THEN
+    try THEN
+        initiate x = 1 / 0
+    catch(innerErr) THEN
+        echo(innerErr)
+        initiate y = "text" + 5
+    END
+catch(outerErr) THEN
+    echo(outerErr)
+END

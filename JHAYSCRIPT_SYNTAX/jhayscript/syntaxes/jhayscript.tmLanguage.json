@@ -1,0 +1,165 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "JhayScript Programming Language",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#function-declarations"
+    },
+    {
+      "include": "#function-calls"
+    },
+    {
+      "include": "#variables"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#brackets"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-colon.jhayscript",
+          "begin": "::",
+          "end": "$",
+          "patterns": [
+            {
+              "name": "punctuation.definition.comment.jhayscript",
+              "match": "::"
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.jhayscript",
+          "match": "\\b(initiate|and|or|not|when|meanwhile|otherwise|loop|endure|function|release|continue|shatter|END|THEN)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.jhayscript",
+          "match": "\\+|-|\\*|/|\\^|=|!=|<=|>=|<|>|\\->"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.jhayscript",
+          "match": "\\b\\d+\\.?\\d*\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.jhayscript",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.jhayscript",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "function-declarations": {
+      "patterns": [
+        {
+          "name": "meta.function.jhayscript",
+          "begin": "\\b(function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.jhayscript" },
+            "2": { "name": "entity.name.function.jhayscript" }
+          },
+          "end": "(?=\\n|;|$)",
+          "patterns": [
+            {
+              "include": "$self"
+            }
+          ]
+        }
+      ]
+    },
+    "function-calls": {
+      "patterns": [
+        {
+          "name": "meta.function-call.jhayscript",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.jhayscript" }
+          }
+        },
+        {
+          "name": "support.function.builtin.jhayscript",
+          "match": "\\b(PRINT|PRINT_RET|INPUT|INPUT_INT|CLEAR|CLS|IS_NUM|IS_STR|IS_LIST|IS_FUN|APPEND|POP|EXTEND|LEN|RUN)\\b"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.readwrite.jhayscript",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.jhayscript" }
+          }
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.numeric.jhayscript",
+          "match": "\\b(Null|True|False|MATH_PI)\\b"
+        }
+      ]
+    },
+    "brackets": {
+      "patterns": [
+        {
+          "name": "meta.brace.round.jhayscript",
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "$self"
+            }
+          ]
+        },
+        {
+          "name": "meta.brace.square.jhayscript",
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "include": "$self"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "scopeName": "source.jhayscript"
+}

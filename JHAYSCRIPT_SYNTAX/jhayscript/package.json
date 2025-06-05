@@ -1,0 +1,25 @@
+{
+  "name": "jhayscript",
+  "displayName": "jhayscript",
+  "description": "Syntax highlighting and language support for JhayScript",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "jhayscript",
+      "aliases": ["JhayScript Programming Language", "jhayscript"],
+      "extensions": [".jhay"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "jhayscript",
+      "scopeName": "source.jhayscript",
+      "path": "./syntaxes/jhayscript.tmLanguage.json"
+    }]
+  }
+}
