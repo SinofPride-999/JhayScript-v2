@@ -53,7 +53,7 @@
       "patterns": [
         {
           "name": "keyword.control.jhayscript",
-          "match": "\\b(initiate|and|or|not|when|meanwhile|otherwise|loop|endure|function|release|continue|shatter|END|THEN)\\b"
+          "match": "\\b(initiate|and|or|not|if|elif|else|for|while|function|return|END|THEN|try|catch|to|step)\\b"
         }
       ]
     },
@@ -113,7 +113,7 @@
         },
         {
           "name": "support.function.builtin.jhayscript",
-          "match": "\\b(PRINT|PRINT_RET|INPUT|INPUT_INT|CLEAR|CLS|IS_NUM|IS_STR|IS_LIST|IS_FUN|APPEND|POP|EXTEND|LEN|RUN)\\b"
+          "match": "\\b(echo|echo_ret|listen|listen_int|die|CLEAR|CLS|is_numeric|is_string|is_list|is_function|append|pop|extend|len|awake)\\b"
         }
       ]
     },
@@ -132,7 +132,7 @@
       "patterns": [
         {
           "name": "constant.numeric.jhayscript",
-          "match": "\\b(Null|True|False|MATH_PI)\\b"
+          "match": "\\b(Null|True|False|MATH_PI|continue|break)\\b"
         }
       ]
     },

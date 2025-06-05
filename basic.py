@@ -4,6 +4,7 @@
 
 from strings_with_arrows import *
 
+
 import string
 import os
 import math
@@ -1769,44 +1770,44 @@ class BaseFunction(Value):
     return res.success(None)
   
 class ErrorValue(Value):
-    def __init__(self, error):
-        super().__init__()
-        self.error = error
-        # Add quick-access properties
-        self.properties = {
-            "message": String(f"{error.error_name}: {error.details}"),
-            "line": Number(error.pos_start.ln + 1),
-            "column": Number(error.pos_start.col + 1),
-            "file": String(error.pos_start.fn)
-        }
-        
-    def copy(self):
-        copy = ErrorValue(self.error)
-        copy.set_pos(self.pos_start, self.pos_end)
-        copy.set_context(self.context)
-        return copy
-    
-    def get_property(self, prop_name):
-        if prop_name in self.properties:
-            return self.properties[prop_name]
-        return None
+  def __init__(self, error):
+    super().__init__()
+    self.error = error
+    # Add quick-access properties
+    self.properties = {
+      "message": String(f"{error.error_name}: {error.details}"),
+      "line": Number(error.pos_start.ln + 1),
+      "column": Number(error.pos_start.col + 1),
+      "file": String(error.pos_start.fn)
+    }
+      
+  def copy(self):
+    copy = ErrorValue(self.error)
+    copy.set_pos(self.pos_start, self.pos_end)
+    copy.set_context(self.context)
+    return copy
+  
+  def get_property(self, prop_name):
+    if prop_name in self.properties:
+        return self.properties[prop_name]
+    return None
 
-    def added_to(self, other):
-        if isinstance(other, String):
-            return String(f"{other.value}{self}").set_context(self.context), None
-        return None, Value.illegal_operation(self, other)
+  def added_to(self, other):
+    if isinstance(other, String):
+        return String(f"{other.value}{self}").set_context(self.context), None
+    return None, Value.illegal_operation(self, other)
 
-    def __str__(self):
-        # Include arrow pointers for better debugging
-        error = self.error
-        return (
-            f"{error.error_name}: {error.details}\n"
-            f"File {error.pos_start.fn}, line {error.pos_start.ln + 1}\n"
-            f"{string_with_arrows(error.pos_start.ftxt, error.pos_start, error.pos_end)}"
-        )
+  def __str__(self):
+    # Include arrow pointers for better debugging
+    error = self.error
+    return (
+      f"{error.error_name}: {error.details}\n"
+      f"File {error.pos_start.fn}, line {error.pos_start.ln + 1}\n"
+      f"{string_with_arrows(error.pos_start.ftxt, error.pos_start, error.pos_end)}"
+    )
 
-    def __repr__(self):
-        return f"ErrorValue({self.error.error_name})"
+  def __repr__(self):
+    return f"ErrorValue({self.error.error_name})"
 
 class Function(BaseFunction):
   def __init__(self, name, body_node, arg_names, should_auto_return):

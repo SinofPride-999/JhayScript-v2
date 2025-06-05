@@ -1,7 +1,0 @@
-
-initiate list_a = [1, 2, 3]
-initiate list_b = [4, 5, 6]
-
-extend(list_a, list_b)
-
-echo(list_a)
