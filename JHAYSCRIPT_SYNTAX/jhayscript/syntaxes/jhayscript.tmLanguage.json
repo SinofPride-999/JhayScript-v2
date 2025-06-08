@@ -53,7 +53,7 @@
       "patterns": [
         {
           "name": "keyword.control.jhayscript",
-          "match": "\\b(initiate|and|or|not|if|elif|else|for|while|function|return|END|THEN|try|catch|to|step)\\b"
+          "match": "\\b(initiate|and|or|not|if|elif|else|for|while|function|return|END|THEN|try|catch|to|step|import|from)\\b"
         }
       ]
     },
