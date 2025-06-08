@@ -10,6 +10,7 @@ import os
 import math
 import random
 
+
 #######################################
 # CONSTANTS
 #######################################
@@ -114,6 +115,8 @@ TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
 TT_LSQUARE    = 'LSQUARE'
 TT_RSQUARE    = 'RSQUARE'
+TT_LBRACE     = 'LBRACE'
+TT_RBRACE     = 'RBRACE'
 TT_EE					= 'EE'
 TT_NE					= 'NE'
 TT_LT					= 'LT'
@@ -124,6 +127,10 @@ TT_COMMA			= 'COMMA'
 TT_ARROW			= 'ARROW'
 TT_NEWLINE		= 'NEWLINE'
 TT_EOF				= 'EOF'
+TT_IMPORT     = 'IMPORT'
+TT_FROM       = 'FROM'
+TT_AS         = 'AS'
+TT_MOD        = 'MOD'
 
 KEYWORDS = [
   'initiate',
@@ -144,7 +151,10 @@ KEYWORDS = [
   'continue',
   'break',
   'try',
-  'catch'
+  'catch',
+  'import',
+  'from',
+  'as'
 ]
 
 class Token:
@@ -189,6 +199,7 @@ class Lexer:
     while self.current_char != None:
       if self.current_char in ' \t':
         self.advance()
+        
       elif self.current_char == ':':
         # Check if this is the start of a comment
         next_char = self.text[self.pos.idx + 1] if self.pos.idx + 1 < len(self.text) else None
@@ -199,54 +210,90 @@ class Lexer:
           char = self.current_char
           self.advance()
           return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+        
       elif self.current_char in ';\n':
         tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char in DIGITS:
         tokens.append(self.make_number())
+        
       elif self.current_char in LETTERS:
         tokens.append(self.make_identifier())
+        
+      elif self.current_char in ('"', "'"):  # Handle both single and double quotes
+        token, error = self.make_string()
+        if error: return [], error
+        tokens.append(token)
+        
+      elif self.current_char == '{':
+        tokens.append(Token(TT_LBRACE, pos_start=self.pos))
+        self.advance()
+        
+      elif self.current_char == '}':
+        tokens.append(Token(TT_RBRACE, pos_start=self.pos))
+        self.advance()
+        
       elif self.current_char == '"':
         tokens.append(self.make_string())
+        
       elif self.current_char == '+':
         tokens.append(Token(TT_PLUS, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == '-':
         tokens.append(self.make_minus_or_arrow())
+        
       elif self.current_char == '*':
         tokens.append(Token(TT_MUL, pos_start=self.pos))
         self.advance()
+        
+      elif self.current_char == '%':
+        tokens.append(Token(TT_MOD, pos_start=self.pos))
+        self.advance()
+        
       elif self.current_char == '/':
         tokens.append(Token(TT_DIV, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == '^':
         tokens.append(Token(TT_POW, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == '(':
         tokens.append(Token(TT_LPAREN, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == ')':
         tokens.append(Token(TT_RPAREN, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == '[':
         tokens.append(Token(TT_LSQUARE, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == ']':
         tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
         self.advance()
+        
       elif self.current_char == '!':
         token, error = self.make_not_equals()
         if error: return [], error
         tokens.append(token)
+        
       elif self.current_char == '=':
         tokens.append(self.make_equals())
+        
       elif self.current_char == '<':
         tokens.append(self.make_less_than())
+        
       elif self.current_char == '>':
         tokens.append(self.make_greater_than())
+        
       elif self.current_char == ',':
         tokens.append(Token(TT_COMMA, pos_start=self.pos))
         self.advance()
+        
       else:
         pos_start = self.pos.copy()
         char = self.current_char
@@ -277,6 +324,7 @@ class Lexer:
     string = ''
     pos_start = self.pos.copy()
     escape_character = False
+    quote_char = self.current_char
     self.advance()
 
     escape_characters = {
@@ -284,19 +332,22 @@ class Lexer:
       't': '\t'
     }
 
-    while self.current_char != None and (self.current_char != '"' or escape_character):
-      if escape_character:
-        string += escape_characters.get(self.current_char, self.current_char)
-      else:
-        if self.current_char == '\\':
-          escape_character = True
+    while self.current_char != None and (self.current_char != quote_char or escape_character):
+        if escape_character:
+            string += escape_characters.get(self.current_char, self.current_char)
+            escape_character = False
         else:
-          string += self.current_char
-      self.advance()
-      escape_character = False
+            if self.current_char == '\\':
+                escape_character = True
+            else:
+                string += self.current_char
+        self.advance()
+
+    if self.current_char != quote_char:
+        return None, IllegalCharError(pos_start, self.pos, f"Expected closing quote {quote_char}")
 
     self.advance()
-    return Token(TT_STRING, string, pos_start, self.pos)
+    return Token(TT_STRING, string, pos_start, self.pos), None
 
   def make_identifier(self):
     id_str = ''
@@ -376,7 +427,6 @@ class Lexer:
     # Skip the newline character if present
     if self.current_char == '\n':
         self.advance()
-
 
 #######################################
 # NODES
@@ -535,6 +585,15 @@ class BreakNode:
     self.pos_start = pos_start
     self.pos_end = pos_end
 
+class ImportNode:
+  def __init__(self, imports, module_path, pos_start, pos_end):
+    self.imports = imports  # List of (name, alias) tuples
+    self.module_path = module_path
+    self.pos_start = pos_start
+    self.pos_end = pos_end
+
+  def __repr__(self):
+    return f"Import({self.imports} from '{self.module_path}')"
 
 #######################################
 # PARSE RESULT
@@ -649,6 +708,11 @@ class Parser:
   def statement(self):
     res = ParseResult()
     pos_start = self.current_tok.pos_start.copy()
+    
+    if self.current_tok.matches(TT_KEYWORD, 'import'):
+      import_res = self.import_statement()
+      if import_res.error: return import_res
+      return res.success(res.register(import_res))
 
     if self.current_tok.matches(TT_KEYWORD, 'return'):
       res.register_advancement()
@@ -676,6 +740,104 @@ class Parser:
         "Expected 'return', 'continue', 'break', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
       ))
     return res.success(expr)
+
+  def import_statement(self):
+    res = ParseResult()
+    pos_start = self.current_tok.pos_start.copy()
+
+    if not self.current_tok.matches(TT_KEYWORD, 'import'):
+        return res.failure(InvalidSyntaxError(
+            pos_start, self.current_tok.pos_end,
+            "Expected 'import' keyword"
+        ))
+
+    res.register_advancement()
+    self.advance()  # Consume 'import'
+
+    imports = []
+    
+    # Handle named imports {x, y, z}
+    if self.current_tok.type == TT_LBRACE:
+        res.register_advancement()
+        self.advance()  # Consume '{'
+
+        while self.current_tok.type != TT_RBRACE:
+            if self.current_tok.type != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected identifier in import list"
+                ))
+
+            name = self.current_tok.value
+            res.register_advancement()
+            self.advance()
+
+            # Handle 'as' alias
+            alias = name
+            if self.current_tok.matches(TT_KEYWORD, 'as'):
+                res.register_advancement()
+                self.advance()
+                
+                if self.current_tok.type != TT_IDENTIFIER:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_tok.pos_start, self.current_tok.pos_end,
+                        "Expected identifier after 'as'"
+                    ))
+                
+                alias = self.current_tok.value
+                res.register_advancement()
+                self.advance()
+
+            imports.append((name, alias))
+
+            # Handle comma separator
+            if self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
+
+        if self.current_tok.type != TT_RBRACE:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '}' to close import list"
+            ))
+
+        res.register_advancement()
+        self.advance()  # Consume '}'
+    else:
+        # Handle default import (single identifier)
+        if self.current_tok.type != TT_IDENTIFIER:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected identifier after 'import'"
+            ))
+
+        name = self.current_tok.value
+        res.register_advancement()
+        self.advance()
+        imports.append((name, name))
+
+    # Expect 'from' keyword
+    if not self.current_tok.matches(TT_KEYWORD, 'from'):
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected 'from' after import specifiers"
+        ))
+
+    res.register_advancement()
+    self.advance()
+
+    # Expect module path string
+    if self.current_tok.type != TT_STRING:
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected module path string"
+        ))
+
+    module_path = self.current_tok.value
+    res.register_advancement()
+    self.advance()
+
+    return res.success(ImportNode(imports, module_path, pos_start, self.current_tok.pos_end.copy()))  
 
   def expr(self):
     res = ParseResult()
@@ -742,7 +904,7 @@ class Parser:
     return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
   def term(self):
-    return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+    return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD))
 
   def factor(self):
     res = ParseResult()
@@ -1562,6 +1724,15 @@ class Number(Value):
       return Number(self.value / other.value).set_context(self.context), None
     else:
       return None, Value.illegal_operation(self, other)
+    
+  def moded_by(self, other):
+    if isinstance(other, Number):
+      if other.value == 0:
+        return None, RTError(self.pos_start, other.pos_end, "Modulo by zero", self.context)
+      return Number(self.value % other.value).set_context(self.context), None
+    else:
+      return None, Value.illegal_operation(self, other)
+
 
   def powed_by(self, other):
     if isinstance(other, Number):
@@ -2867,30 +3038,46 @@ class Interpreter:
 
     if node.op_tok.type == TT_PLUS:
       result, error = left.added_to(right)
+      
     elif node.op_tok.type == TT_MINUS:
       result, error = left.subbed_by(right)
+      
     elif node.op_tok.type == TT_MUL:
       result, error = left.multed_by(right)
+      
     elif node.op_tok.type == TT_DIV:
       result, error = left.dived_by(right)
+      
+    elif node.op_tok.type == TT_MOD:
+      result, error = left.moded_by(right)
+
     elif node.op_tok.type == TT_POW:
       result, error = left.powed_by(right)
+      
     elif node.op_tok.type == TT_EE:
       result, error = left.get_comparison_eq(right)
+      
     elif node.op_tok.type == TT_NE:
       result, error = left.get_comparison_ne(right)
+      
     elif node.op_tok.type == TT_LT:
       result, error = left.get_comparison_lt(right)
+      
     elif node.op_tok.type == TT_GT:
       result, error = left.get_comparison_gt(right)
+      
     elif node.op_tok.type == TT_LTE:
       result, error = left.get_comparison_lte(right)
+      
     elif node.op_tok.type == TT_GTE:
       result, error = left.get_comparison_gte(right)
+      
     elif node.op_tok.matches(TT_KEYWORD, 'AND'):
       result, error = left.anded_by(right)
+      
     elif node.op_tok.matches(TT_KEYWORD, 'OR'):
       result, error = left.ored_by(right)
+      
 
     if error:
       return res.failure(error)
@@ -3050,6 +3237,50 @@ class Interpreter:
 
   def visit_BreakNode(self, node, context):
     return RTResult().success_break()
+
+  def visit_ImportNode(self, node, context):
+    res = RTResult()
+    module_path = node.module_path
+    
+    try:
+        # Try to load the module
+        with open(module_path + ".txt", "r") as f:  # Assuming .txt extension for modules
+            module_code = f.read()
+        
+        # Run the module in a new context
+        module_context = Context(f"<module {module_path}>", parent=context)
+        module_context.symbol_table = SymbolTable(global_symbol_table)
+        
+        # Execute module code
+        _, error = run(module_path, module_code)
+        if error:
+            return res.failure(error)
+        
+        # Import the specified symbols into current context
+        for name, alias in node.imports:
+            value = module_context.symbol_table.get(name)
+            if not value:
+                return res.failure(RTError(
+                    node.pos_start, node.pos_end,
+                    f"Cannot import '{name}' - not found in module",
+                    context
+                ))
+            context.symbol_table.set(alias, value)
+        
+        return res.success(Number.null)
+    
+    except FileNotFoundError:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            f"Module '{module_path}' not found",
+            context
+        ))
+    except Exception as e:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            f"Failed to import module: {str(e)}",
+            context
+        ))
 
 #######################################
 # RUN

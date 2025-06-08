@@ -1,8 +1,9 @@
 import math
 import os
 import random
-from error import RTError, Position
+from error import *
 from nodes import *
+
 
 #######################################
 # RUNTIME RESULT
@@ -172,6 +173,15 @@ class Number(Value):
       return Number(self.value / other.value).set_context(self.context), None
     else:
       return None, Value.illegal_operation(self, other)
+    
+  def moded_by(self, other):
+    if isinstance(other, Number):
+      if other.value == 0:
+        return None, RTError(self.pos_start, other.pos_end, "Modulo by zero", self.context)
+      return Number(self.value % other.value).set_context(self.context), None
+    else:
+      return None, Value.illegal_operation(self, other)
+
 
   def powed_by(self, other):
     if isinstance(other, Number):
@@ -1296,26 +1306,60 @@ class BuiltInFunction(BaseFunction):
     return RTResult().success(shuffled)
   execute_shuffle.arg_names = ["list"]
 
-class Module(Value):
-  def __init__(self, name):
-    super().__init__()
-    self.name = name
-    self.attributes = {}
-      
-  def set_attr(self, name, value):
-    self.attributes[name] = value
-      
-  def get_attr(self, name):
-    if name in self.attributes:
-      return self.attributes[name]
-    return None
-      
-  def copy(self):
-    copy = Module(self.name)
-    copy.attributes = self.attributes.copy()
-    copy.set_context(self.context)
-    copy.set_pos(self.pos_start, self.pos_end)
-    return copy
-      
-  def __repr__(self):
-    return f"<module {self.name}>"
+
+#####################################
+# EXTRA CUSTOM IN-BUILT FUNCTIONS *************************
+#####################################
+
+BuiltInFunction.print       = BuiltInFunction("print")
+BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
+BuiltInFunction.input       = BuiltInFunction("input")
+BuiltInFunction.input_int   = BuiltInFunction("input_int")
+BuiltInFunction.clear       = BuiltInFunction("clear")
+BuiltInFunction.is_number   = BuiltInFunction("is_number")
+BuiltInFunction.is_string   = BuiltInFunction("is_string")
+BuiltInFunction.is_list     = BuiltInFunction("is_list")
+BuiltInFunction.is_function = BuiltInFunction("is_function")
+BuiltInFunction.append      = BuiltInFunction("append")
+BuiltInFunction.pop         = BuiltInFunction("pop")
+BuiltInFunction.extend      = BuiltInFunction("extend")
+BuiltInFunction.len					= BuiltInFunction("len")
+BuiltInFunction.run					= BuiltInFunction("run")
+
+#####################################
+# CUSTOM IN-BUILT FUNCTIONS *********************************
+#####################################
+
+BuiltInFunction.merge       = BuiltInFunction("merge")
+BuiltInFunction.pop         = BuiltInFunction("pop")
+BuiltInFunction.remove      = BuiltInFunction("remove")
+BuiltInFunction.update      = BuiltInFunction("update")
+BuiltInFunction.len         = BuiltInFunction("len")
+BuiltInFunction.wipe        = BuiltInFunction("wipe")
+BuiltInFunction.contains    = BuiltInFunction("contains")
+BuiltInFunction.reverse     = BuiltInFunction("reverse")
+BuiltInFunction.sort        = BuiltInFunction("sort")
+BuiltInFunction.sum         = BuiltInFunction("sum")
+BuiltInFunction.average     = BuiltInFunction("average")
+BuiltInFunction.min         = BuiltInFunction("min")
+BuiltInFunction.max         = BuiltInFunction("max")
+BuiltInFunction.count       = BuiltInFunction("count")
+BuiltInFunction.push        = BuiltInFunction("push")
+BuiltInFunction.abs         = BuiltInFunction("abs")
+BuiltInFunction.round       = BuiltInFunction("round")
+BuiltInFunction.ceil        = BuiltInFunction("ceil")
+BuiltInFunction.floor       = BuiltInFunction("floor")
+BuiltInFunction.sqrt        = BuiltInFunction("sqrt")
+BuiltInFunction.power       = BuiltInFunction("power")
+BuiltInFunction.type_of     = BuiltInFunction("type_of")
+BuiltInFunction.str         = BuiltInFunction("str")
+BuiltInFunction.int         = BuiltInFunction("int")
+BuiltInFunction.float       = BuiltInFunction("float")
+BuiltInFunction.upper       = BuiltInFunction("upper")
+BuiltInFunction.lower       = BuiltInFunction("lower")
+BuiltInFunction.strip       = BuiltInFunction("strip")
+BuiltInFunction.reverse_str = BuiltInFunction("reverse_str")
+BuiltInFunction.len_str     = BuiltInFunction("len_str")
+BuiltInFunction.is_prime    = BuiltInFunction("is_prime")
+BuiltInFunction.unique      = BuiltInFunction("unique")
+BuiltInFunction.shuffle     = BuiltInFunction("shuffle")

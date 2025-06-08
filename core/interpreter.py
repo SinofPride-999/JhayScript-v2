@@ -1,6 +1,12 @@
-from error import *
-from values import *
-from lexer import *
+from .nodes import *
+from .values import *
+from .error import *
+from .lexer import *
+
+
+#######################################
+# INTERPRETER
+#######################################
 
 class Interpreter:
   def visit(self, node, context):
@@ -43,80 +49,6 @@ class Interpreter:
       return res.success(catch_value)
     
     return res.success(try_value)
-  
-  def visit_ImportNode(self, node, context):
-    res = RTResult()
-    
-    # Handle different import styles
-    if node.is_default_import:
-        # Load the entire module
-        module = self.load_module(node.module_name, context)
-        if isinstance(module, RTError):
-            return res.failure(module)
-            
-        # Store under the given name (or module name if no alias)
-        import_name = node.import_alias or node.module_name
-        context.symbol_table.set(import_name, module)
-        
-    else:
-        # Named imports - load specific functions
-        module = self.load_module(node.module_name, context)
-        if isinstance(module, RTError):
-            return res.failure(module)
-            
-        for import_item in node.import_items:
-            # Get the requested item from the module
-            item_name = import_item['original']
-            item_value = module.get_attr(item_name)
-            
-            if not item_value:
-                return res.failure(RTError(
-                    node.pos_start, node.pos_end,
-                    f"Module '{node.module_name}' has no export '{item_name}'",
-                    context
-                ))
-                
-            # Store under the alias or original name
-            alias = import_item['alias'] or item_name
-            context.symbol_table.set(alias, item_value)
-    
-    return res.success(Number.null)
-
-  def load_module(self, module_name, context):
-    try:
-      # Try to load built-in module first
-      if module_name == 'algo':
-        from modules import algo
-        module = Module('algo')
-        for name, func in algo.exports.items():
-          builtin_func = BuiltInFunction(name)
-          builtin_func.execute = lambda ctx, f=func: f(ctx.symbol_table.get('value'), ctx)
-          module.set_attr(name, builtin_func)
-        return module
-          
-      elif module_name == 'time':
-        from modules import time
-        module = Module('time')
-        for name, func in time.exports.items():
-          builtin_func = BuiltInFunction(name)
-          builtin_func.execute = lambda ctx, f=func: f(ctx.symbol_table.get('value'), ctx)
-          module.set_attr(name, builtin_func)
-        return module
-          
-      # Add other built-in modules here...
-      
-      else:
-        return RTError(
-          None, None,
-          f"Module '{module_name}' not found",
-          context
-        )
-    except Exception as e:
-      return RTError(
-        None, None,
-        f"Failed to load module '{module_name}': {str(e)}",
-        context
-      )
   
   def visit_ListNode(self, node, context):
     res = RTResult()
@@ -163,30 +95,46 @@ class Interpreter:
 
     if node.op_tok.type == TT_PLUS:
       result, error = left.added_to(right)
+      
     elif node.op_tok.type == TT_MINUS:
       result, error = left.subbed_by(right)
+      
     elif node.op_tok.type == TT_MUL:
       result, error = left.multed_by(right)
+      
     elif node.op_tok.type == TT_DIV:
       result, error = left.dived_by(right)
+      
+    elif node.op_tok.type == TT_MOD:
+      result, error = left.moded_by(right)
+
     elif node.op_tok.type == TT_POW:
       result, error = left.powed_by(right)
+      
     elif node.op_tok.type == TT_EE:
       result, error = left.get_comparison_eq(right)
+      
     elif node.op_tok.type == TT_NE:
       result, error = left.get_comparison_ne(right)
+      
     elif node.op_tok.type == TT_LT:
       result, error = left.get_comparison_lt(right)
+      
     elif node.op_tok.type == TT_GT:
       result, error = left.get_comparison_gt(right)
+      
     elif node.op_tok.type == TT_LTE:
       result, error = left.get_comparison_lte(right)
+      
     elif node.op_tok.type == TT_GTE:
       result, error = left.get_comparison_gte(right)
+      
     elif node.op_tok.matches(TT_KEYWORD, 'AND'):
       result, error = left.anded_by(right)
+      
     elif node.op_tok.matches(TT_KEYWORD, 'OR'):
       result, error = left.ored_by(right)
+      
 
     if error:
       return res.failure(error)
@@ -346,3 +294,48 @@ class Interpreter:
 
   def visit_BreakNode(self, node, context):
     return RTResult().success_break()
+
+  def visit_ImportNode(self, node, context):
+    res = RTResult()
+    module_path = node.module_path
+    
+    try:
+        # Try to load the module
+        with open(module_path + ".txt", "r") as f:  # Assuming .txt extension for modules
+            module_code = f.read()
+        
+        # Run the module in a new context
+        module_context = Context(f"<module {module_path}>", parent=context)
+        module_context.symbol_table = SymbolTable(global_symbol_table)
+        
+        # Execute module code
+        _, error = run(module_path, module_code)
+        if error:
+            return res.failure(error)
+        
+        # Import the specified symbols into current context
+        for name, alias in node.imports:
+            value = module_context.symbol_table.get(name)
+            if not value:
+                return res.failure(RTError(
+                    node.pos_start, node.pos_end,
+                    f"Cannot import '{name}' - not found in module",
+                    context
+                ))
+            context.symbol_table.set(alias, value)
+        
+        return res.success(Number.null)
+    
+    except FileNotFoundError:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            f"Module '{module_path}' not found",
+            context
+        ))
+    except Exception as e:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            f"Failed to import module: {str(e)}",
+            context
+        ))
+

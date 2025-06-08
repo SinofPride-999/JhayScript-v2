@@ -11,8 +11,27 @@ def clear_screen():
 
 clear_screen()
 
+def find_module_path(module_name):
+  # Check built-in modules first
+  builtin_path = os.path.join(os.path.dirname(__file__), 'modules', f"{module_name}.txt")
+  if os.path.exists(builtin_path):
+    return builtin_path
+      
+  # Check stdlib directory
+  stdlib_path = os.path.join('stdlib', f"{module_name}.txt")
+  if os.path.exists(stdlib_path):
+    return stdlib_path
+      
+  # Check current directory
+  local_path = f"{module_name}.txt"
+  if os.path.exists(local_path):
+    return local_path
+      
+  return None
+
+
 while True:
-    text = input('echo > ')
+    text = input('$ ')
     
     if text.strip().lower() == "exit":
       break

@@ -1,6 +1,10 @@
-from lexer import *
-from nodes import *
-from error import *
+from .errors import *
+from .nodes import *
+from .tokens import *
+
+#######################################
+# PARSE RESULT
+#######################################
 
 class ParseResult:
   def __init__(self):
@@ -35,6 +39,11 @@ class ParseResult:
       self.error = error
     return self
 
+
+#######################################
+# PARSER
+#######################################
+
 class Parser:
   def __init__(self, tokens):
     self.tokens = tokens
@@ -63,6 +72,8 @@ class Parser:
         "Token cannot appear after previous tokens"
       ))
     return res
+
+  ###################################
 
   def statements(self):
     res = ParseResult()
@@ -105,10 +116,11 @@ class Parser:
   def statement(self):
     res = ParseResult()
     pos_start = self.current_tok.pos_start.copy()
-
-    # import statement handling
+    
     if self.current_tok.matches(TT_KEYWORD, 'import'):
-      return self.import_statement()
+      import_res = self.import_statement()
+      if import_res.error: return import_res
+      return res.success(res.register(import_res))
 
     if self.current_tok.matches(TT_KEYWORD, 'return'):
       res.register_advancement()
@@ -136,126 +148,104 @@ class Parser:
         "Expected 'return', 'continue', 'break', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
       ))
     return res.success(expr)
-  
+
   def import_statement(self):
     res = ParseResult()
     pos_start = self.current_tok.pos_start.copy()
-    
+
+    if not self.current_tok.matches(TT_KEYWORD, 'import'):
+        return res.failure(InvalidSyntaxError(
+            pos_start, self.current_tok.pos_end,
+            "Expected 'import' keyword"
+        ))
+
     res.register_advancement()
-    self.advance()  # Skip 'import'
+    self.advance()  # Consume 'import'
+
+    imports = []
     
-    # Check for default import (import algo from 'algo')
-    if self.current_tok.type == TT_IDENTIFIER and not self.peek().matches(TT_KEYWORD, 'from'):
-      import_name = self.current_tok.value
-      res.register_advancement()
-      self.advance()
-      
-      if self.current_tok.matches(TT_KEYWORD, 'from'):
+    # Handle named imports {x, y, z}
+    if self.current_tok.type == TT_LBRACE:
         res.register_advancement()
-        self.advance()
-        
-        if self.current_tok.type != TT_STRING:
-          return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected module name as string"
-          ))
-            
-        module_name = self.current_tok.value
-        res.register_advancement()
-        self.advance()
-        
-        return res.success(ImportNode(
-          module_name=module_name,
-          is_default_import=True,
-          import_items=[],
-          import_alias=None,
-          pos_start=pos_start,
-          pos_end=self.current_tok.pos_end.copy()
-        ))
-    
-    # Handle named imports (import { bubble_sort } from 'algo')
-    elif self.current_tok.type == TT_LBRACE:
-      res.register_advancement()
-      self.advance()
-        
-      import_items = []
-      while self.current_tok.type != TT_RBRACE:
-          if self.current_tok.type != TT_IDENTIFIER:
-            return res.failure(InvalidSyntaxError(
-              self.current_tok.pos_start, self.current_tok.pos_end,
-              "Expected identifier in import list"
-            ))
-              
-          original_name = self.current_tok.value
-          alias = None
-          res.register_advancement()
-          self.advance()
-          
-          # Check for alias (import { bubble_sort as sort } from 'algo')
-          if self.current_tok.matches(TT_KEYWORD, 'as'):
-              res.register_advancement()
-              self.advance()
-              
-              if self.current_tok.type != TT_IDENTIFIER:
+        self.advance()  # Consume '{'
+
+        while self.current_tok.type != TT_RBRACE:
+            if self.current_tok.type != TT_IDENTIFIER:
                 return res.failure(InvalidSyntaxError(
-                  self.current_tok.pos_start, self.current_tok.pos_end,
-                  "Expected alias name after 'as'"
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected identifier in import list"
                 ))
-                  
-              alias = self.current_tok.value
-              res.register_advancement()
-              self.advance()
-              
-          import_items.append({
-              'original': original_name,
-              'alias': alias
-          })
-          
-          if self.current_tok.type == TT_COMMA:
-              res.register_advancement()
-              self.advance()
-              
-      if self.current_tok.type != TT_RBRACE:
+
+            name = self.current_tok.value
+            res.register_advancement()
+            self.advance()
+
+            # Handle 'as' alias
+            alias = name
+            if self.current_tok.matches(TT_KEYWORD, 'as'):
+                res.register_advancement()
+                self.advance()
+                
+                if self.current_tok.type != TT_IDENTIFIER:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_tok.pos_start, self.current_tok.pos_end,
+                        "Expected identifier after 'as'"
+                    ))
+                
+                alias = self.current_tok.value
+                res.register_advancement()
+                self.advance()
+
+            imports.append((name, alias))
+
+            # Handle comma separator
+            if self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
+
+        if self.current_tok.type != TT_RBRACE:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '}' to close import list"
+            ))
+
+        res.register_advancement()
+        self.advance()  # Consume '}'
+    else:
+        # Handle default import (single identifier)
+        if self.current_tok.type != TT_IDENTIFIER:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected identifier after 'import'"
+            ))
+
+        name = self.current_tok.value
+        res.register_advancement()
+        self.advance()
+        imports.append((name, name))
+
+    # Expect 'from' keyword
+    if not self.current_tok.matches(TT_KEYWORD, 'from'):
         return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected '}' after import list"
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected 'from' after import specifiers"
         ))
-          
-      res.register_advancement()
-      self.advance()
-      
-      if not self.current_tok.matches(TT_KEYWORD, 'from'):
+
+    res.register_advancement()
+    self.advance()
+
+    # Expect module path string
+    if self.current_tok.type != TT_STRING:
         return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected 'from' after import list"
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected module path string"
         ))
-          
-      res.register_advancement()
-      self.advance()
-      
-      if self.current_tok.type != TT_STRING:
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected module name as string"
-        ))
-          
-      module_name = self.current_tok.value
-      res.register_advancement()
-      self.advance()
-      
-      return res.success(ImportNode(
-        module_name=module_name,
-        is_default_import=False,
-        import_items=import_items,
-        import_alias=None,
-        pos_start=pos_start,
-        pos_end=self.current_tok.pos_end.copy()
-      ))
-  
-    return res.failure(InvalidSyntaxError(
-      pos_start, pos_start,
-      "Invalid import statement"
-    ))
+
+    module_path = self.current_tok.value
+    res.register_advancement()
+    self.advance()
+
+    return res.success(ImportNode(imports, module_path, pos_start, self.current_tok.pos_end.copy()))  
 
   def expr(self):
     res = ParseResult()
@@ -322,7 +312,7 @@ class Parser:
     return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
   def term(self):
-    return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+    return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD))
 
   def factor(self):
     res = ParseResult()
@@ -547,6 +537,7 @@ class Parser:
                 self.current_tok.pos_end.copy()
             ))
     else:
+        # Single-line version would go here
         pass
 
     return res.failure(InvalidSyntaxError(
@@ -953,6 +944,8 @@ class Parser:
       False
     ))
 
+  ###################################
+
   def bin_op(self, func_a, ops, func_b=None):
     if func_b == None:
       func_b = func_a
@@ -970,3 +963,5 @@ class Parser:
       left = BinOpNode(left, op_tok, right)
 
     return res.success(left)
+  
+  
