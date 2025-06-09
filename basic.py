@@ -4,12 +4,13 @@
 
 from strings_with_arrows import *
 
-
 import string
 import os
 import math
 import random
-
+import time
+import threading
+import queue
 
 #######################################
 # CONSTANTS
@@ -131,6 +132,8 @@ TT_IMPORT     = 'IMPORT'
 TT_FROM       = 'FROM'
 TT_AS         = 'AS'
 TT_MOD        = 'MOD'
+TT_ASYNC      = 'ASYNC'
+TT_AWAIT      = 'AWAIT'
 
 KEYWORDS = [
   'initiate',
@@ -154,7 +157,10 @@ KEYWORDS = [
   'catch',
   'import',
   'from',
-  'as'
+  'as',
+  'async',
+  'await',
+  'sleep'
 ]
 
 class Token:
@@ -595,6 +601,24 @@ class ImportNode:
   def __repr__(self):
     return f"Import({self.imports} from '{self.module_path}')"
 
+class AsyncNode:
+  def __init__(self, node):
+    self.node = node
+    self.pos_start = node.pos_start
+    self.pos_end = node.pos_end
+
+class AwaitNode:
+  def __init__(self, node):
+    self.node = node
+    self.pos_start = node.pos_start
+    self.pos_end = node.pos_end
+
+class SleepNode:
+  def __init__(self, duration_node, pos_start, pos_end):
+    self.duration_node = duration_node
+    self.pos_start = pos_start
+    self.pos_end = pos_end
+
 #######################################
 # PARSE RESULT
 #######################################
@@ -1024,6 +1048,51 @@ class Parser:
         try_expr = res.register(self.try_expr())
         if res.error: return res
         return res.success(try_expr)
+      
+    elif tok.matches(TT_KEYWORD, 'async'):
+        res.register_advancement()
+        self.advance()
+        
+        expr = res.register(self.expr())
+        if res.error: return res
+        
+        return res.success(AsyncNode(expr))
+        
+    elif tok.matches(TT_KEYWORD, 'await'):
+        res.register_advancement()
+        self.advance()
+        
+        expr = res.register(self.expr())
+        if res.error: return res
+        
+        return res.success(AwaitNode(expr))
+      
+    elif tok.matches(TT_KEYWORD, 'sleep'):
+        res.register_advancement()
+        self.advance()
+        
+        if self.current_tok.type != TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '(' after 'sleep'"
+            ))
+            
+        res.register_advancement()
+        self.advance()
+        
+        duration = res.register(self.expr())
+        if res.error: return res
+        
+        if self.current_tok.type != TT_RPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected ')' after sleep duration"
+            ))
+            
+        res.register_advancement()
+        self.advance()
+        
+        return res.success(SleepNode(duration, tok.pos_start, self.current_tok.pos_end))
 
     return res.failure(InvalidSyntaxError(
       tok.pos_start, tok.pos_end,
@@ -2013,6 +2082,94 @@ class Function(BaseFunction):
   def __repr__(self):
     return f"<function {self.name}>"
 
+class AsyncFunction(BaseFunction):
+  def __init__(self, name, body_node, arg_names, should_auto_return):
+    super().__init__(name)
+    self.body_node = body_node
+    self.arg_names = arg_names
+    self.should_auto_return = should_auto_return
+      
+  def execute(self, args):
+    res = RTResult()
+    interpreter = Interpreter()
+    exec_ctx = self.generate_new_context()
+    
+    res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
+    if res.should_return(): return res
+    
+    # Return a coroutine instead of executing immediately
+    return res.success(AsyncCoroutine(self, exec_ctx))
+      
+  def copy(self):
+    copy = AsyncFunction(self.name, self.body_node, self.arg_names, self.should_auto_return)
+    copy.set_context(self.context)
+    copy.set_pos(self.pos_start, self.pos_end)
+    return copy
+      
+  def __repr__(self):
+    return f"<async function {self.name}>"
+
+class AsyncCoroutine(Value):
+  def __init__(self, func, context):
+    super().__init__()
+    self.func = func
+    self.context = context
+      
+  def execute(self):
+    interpreter = Interpreter()
+    value = interpreter.visit(self.func.body_node, self.context)
+    if self.func.should_auto_return:
+      return value
+    return RTResult().success(Number.null)
+      
+  def copy(self):
+    copy = AsyncCoroutine(self.func, self.context)
+    copy.set_context(self.context)
+    copy.set_pos(self.func.pos_start, self.func.pos_end)
+    return copy
+      
+  def __repr__(self):
+    return f"<coroutine {self.func.name}>"
+
+class EventLoop:
+    def __init__(self):
+        self.tasks = queue.Queue()
+        self.thread_pool = []
+        self.max_threads = 4
+        self.running = False
+        
+    def start(self):
+        self.running = True
+        for _ in range(self.max_threads):
+            thread = threading.Thread(target=self._worker)
+            thread.daemon = True
+            thread.start()
+            self.thread_pool.append(thread)
+            
+    def stop(self):
+        self.running = False
+        for thread in self.thread_pool:
+            thread.join()
+            
+    def _worker(self):
+        while self.running:
+            try:
+                task = self.tasks.get(timeout=0.1)
+                if task:
+                    task()
+                self.tasks.task_done()
+            except queue.Empty:
+                continue
+                
+    def submit(self, coroutine, callback):
+        def task():
+            result = coroutine.execute()
+            callback(result)
+        self.tasks.put(task)
+
+# Global event loop
+event_loop = EventLoop()
+
 class BuiltInFunction(BaseFunction):
   def __init__(self, name):
     super().__init__(name)
@@ -2030,6 +2187,31 @@ class BuiltInFunction(BaseFunction):
     return_value = res.register(method(exec_ctx))
     if res.should_return(): return res
     return res.success(return_value)
+  
+  def execute_run_async(self, exec_ctx):
+        coroutine = exec_ctx.symbol_table.get("coroutine")
+        callback = exec_ctx.symbol_table.get("callback")
+        
+        if not isinstance(coroutine, AsyncCoroutine):
+            return RTResult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "First argument must be a coroutine",
+                exec_ctx
+            ))
+            
+        if not isinstance(callback, BaseFunction):
+            return RTResult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "Second argument must be a function",
+                exec_ctx
+            ))
+            
+        def cb(result):
+            callback.execute([result.value])
+            
+        event_loop.submit(coroutine, cb)
+        return RTResult().success(Number.null)
+  execute_run_async.arg_names = ["coroutine", "callback"]
 
   def no_visit_method(self, node, context):
     raise Exception(f'No execute_{self.name} method defined')
@@ -3282,6 +3464,60 @@ class Interpreter:
             context
         ))
 
+  def visit_AsyncNode(self, node, context):
+    res = RTResult()
+    value = res.register(self.visit(node.node, context))
+    if res.error: return res
+    
+    # If it's a function, make it async
+    if isinstance(value, Function):
+        async_func = AsyncFunction(value.name, value.body_node, value.arg_names, value.should_auto_return)
+        async_func.set_context(value.context)
+        async_func.set_pos(value.pos_start, value.pos_end)
+        return res.success(async_func)
+    
+    # Otherwise wrap in a coroutine that immediately resolves
+    return res.success(AsyncCoroutine(
+        Function("<anonymous>", node.node, [], True).set_context(context),
+        context
+    ))
+
+  def visit_AwaitNode(self, node, context):
+      res = RTResult()
+      value = res.register(self.visit(node.node, context))
+      if res.error: return res
+      
+      if not isinstance(value, AsyncCoroutine):
+          return res.failure(RTError(
+              node.pos_start, node.pos_end,
+              "Can only await a coroutine",
+              context
+          ))
+      
+      # In a real implementation, this would yield to the event loop
+      # For simplicity, we'll just execute it directly here
+      return value.execute()
+
+  def visit_SleepNode(self, node, context):
+      res = RTResult()
+      duration = res.register(self.visit(node.duration_node, context))
+      if res.error: return res
+      
+      if not isinstance(duration, Number):
+          return res.failure(RTError(
+              node.pos_start, node.pos_end,
+              "Sleep duration must be a number",
+              context
+          ))
+      
+      # Simple synchronous sleep for now
+      # In a real async implementation, this would be non-blocking
+      import time
+      time.sleep(duration.value)
+      
+      return res.success(Number.null)
+
+
 #######################################
 # RUN
 #######################################
@@ -3348,6 +3584,7 @@ global_symbol_table.set("len_str", BuiltInFunction.len_str)
 global_symbol_table.set("is_prime", BuiltInFunction.is_prime)
 global_symbol_table.set("unique", BuiltInFunction.unique)
 global_symbol_table.set("shuffle", BuiltInFunction.shuffle)
+global_symbol_table.set("run_async", BuiltInFunction("run_async"))
 
 def run(fn, text):
   # Generate tokens
