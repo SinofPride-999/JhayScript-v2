@@ -78,6 +78,19 @@ function hello()
   echo("Hello World");
 END
 
+===========
+ASYNC
+===========
+:: Define an async function
+async function fetchData(url)
+    :: Simulate network delay
+    sleep(1)
+    return "Data from " + url
+END
+
+
+
+
 
 
 project-root/
