@@ -1,0 +1,84 @@
+:: Test 1 - Division by Zero (Runtime Error)
+fuck_around THEN
+    initiate result = 10 / 0
+    echo("This line won't execute")
+find_out(err) THEN
+    echo("Caught error: " + err)
+    echo("Error details:")
+    echo("- Message: " + err_message)
+    echo("- Line: " + str(err_line))
+    echo("- File: " + err_file)
+END
+
+
+:: Test Case 2: Undefined Variable (Name Error)
+
+fuck_around THEN
+    echo(undefined_variable)
+find_out(e) THEN
+    echo("Caught error: " + e)
+END
+
+
+:: Test Case 3: Type Mismatch
+
+fuck_around THEN
+    initiate x = "hello"
+    initiate y = x + 5 
+find_out(error) THEN
+    echo("Type error: " + error)
+END
+
+
+:: Test Case 4: Nested Try-Catch
+
+fuck_around THEN
+    fuck_around THEN
+        initiate z = 1 / 0
+    find_out(inner_err) THEN
+        echo("Inner caught: " + inner_err)
+        initiate outer = undefined
+    END
+find_out(outer_err) THEN
+    echo("Outer caught: " + outer_err)
+END
+
+
+:: Test Case 5: Successful Operation
+
+fuck_around THEN
+    initiate safe_value = 100 / 5
+    echo("Result: " + str(safe_value))
+find_out(e) THEN
+    echo("This won't execute since no error occurred")
+END
+echo("Continuing after successful fuck_around block")
+
+
+:: Test Case 6: Error in Function
+
+function risky_math(a, b)
+    return a / b
+END
+
+fuck_around THEN
+    initiate bad_math = risky_math(10, 0)
+find_out(math_err) THEN
+    echo("Math error: " + math_err)
+END
+
+
+:: Test Case 7: Accessing Error Properties
+
+fuck_around THEN
+    initiate lst = [1, 2, 3]
+    echo(lst/10)
+find_out(e) THEN
+    echo("Full error:")
+    echo(e)
+    
+    echo("\nStructured properties:")
+    echo("Type: " + e.error.error_name)
+    echo("Message: " + e.error.details)
+    echo("Line: " + str(e.error.pos_start.ln + 1))
+END

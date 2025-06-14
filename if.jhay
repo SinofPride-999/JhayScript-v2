@@ -1,13 +1,5 @@
-initiate x = 2
+initiate x = 7
 
-fuck_around THEN
-  if x > 10 THEN
-      echo("Big")
-  elif x > 5 THEN
-      echo("Medium")
-  else
-      echo("Small")
-  END
-find_out(error) THEN
-  echo("Error")
+if x > 5 THEN
+  initiate x = x + 1
 END

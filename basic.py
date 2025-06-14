@@ -3216,20 +3216,25 @@ class Interpreter:
     
     # Execute try block
     try_value = res.register(self.visit(node.try_body, context))
-
-    if res.error:
-      error_value = ErrorValue(res.error).set_context(context)
-      
-      # Store both the error object and its properties
-      context.symbol_table.set(node.catch_var.value, error_value)
-      for prop_name, prop_value in error_value.properties.items():
-          context.symbol_table.set(f"{node.catch_var.value}_{prop_name}", prop_value)
-      
-      res.error = None
-      catch_value = res.register(self.visit(node.catch_body, context))
-      if res.error: return res
-      return res.success(catch_value)
     
+    # Only execute catch block if there was an error
+    if res.error:
+        error_value = ErrorValue(res.error).set_context(context)
+        
+        # Store the error object and its properties
+        context.symbol_table.set(node.catch_var.value, error_value)
+        for prop_name, prop_value in error_value.properties.items():
+            context.symbol_table.set(f"{node.catch_var.value}_{prop_name}", prop_value)
+        
+        # Clear the error so we can execute the catch block
+        res.error = None
+        catch_value = res.register(self.visit(node.catch_body, context))
+        if res.error: return res
+        
+        # Return the catch block's result
+        return res.success(catch_value)
+    
+    # Return the try block's result if no error occurred
     return res.success(try_value)
   
   def visit_ListNode(self, node, context):
