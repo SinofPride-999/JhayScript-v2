@@ -23,7 +23,7 @@ def get_tokens(text):
   return token_info, None
 
 def get_ast(text):
-  """Get AST with verbose information"""
+  # Get AST with verbose information
   lexer = Lexer('<stdin>', text)
   tokens, error = lexer.make_tokens()
   if error: return None, error

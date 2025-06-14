@@ -137,9 +137,11 @@ TT_AWAIT      = 'AWAIT'
 
 KEYWORDS = [
   'initiate',
+  
   'and',
   'or',
   'not',
+  
   'if',
   'elif',
   'else',
@@ -150,14 +152,18 @@ KEYWORDS = [
   'function',
   'THEN',
   'END',
+  
   'return',
   'continue',
   'break',
+  
   'try',
   'catch',
+  
   'import',
   'from',
   'as',
+  
   'async',
   'await',
   'sleep'
@@ -1268,29 +1274,34 @@ class Parser:
     else_case = None
 
     if self.current_tok.matches(TT_KEYWORD, 'else'):
-      res.register_advancement()
-      self.advance()
-
-      if self.current_tok.type == TT_NEWLINE:
         res.register_advancement()
         self.advance()
 
-        statements = res.register(self.statements())
-        if res.error: return res
-        else_case = (statements, True)
+        # Make THEN optional for else clause too
+        if self.current_tok.matches(TT_KEYWORD, 'THEN'):
+            res.register_advancement()
+            self.advance()
 
-        if self.current_tok.matches(TT_KEYWORD, 'END'):
-          res.register_advancement()
-          self.advance()
+        if self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+
+            statements = res.register(self.statements())
+            if res.error: return res
+            else_case = (statements, True)
+
+            if self.current_tok.matches(TT_KEYWORD, 'END'):
+                res.register_advancement()
+                self.advance()
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'END'"
+                ))
         else:
-          return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected 'END'"
-          ))
-      else:
-        expr = res.register(self.statement())
-        if res.error: return res
-        else_case = (expr, False)
+            expr = res.register(self.statement())
+            if res.error: return res
+            else_case = (expr, False)
 
     return res.success(else_case)
 
@@ -1299,12 +1310,12 @@ class Parser:
     cases, else_case = [], None
 
     if self.current_tok.matches(TT_KEYWORD, 'elif'):
-      all_cases = res.register(self.if_expr_b())
-      if res.error: return res
-      cases, else_case = all_cases
+        all_cases = res.register(self.if_expr_b())
+        if res.error: return res
+        cases, else_case = all_cases
     else:
-      else_case = res.register(self.if_expr_c())
-      if res.error: return res
+        else_case = res.register(self.if_expr_c())
+        if res.error: return res
 
     return res.success((cases, else_case))
 
@@ -1314,10 +1325,10 @@ class Parser:
     else_case = None
 
     if not self.current_tok.matches(TT_KEYWORD, case_keyword):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected '{case_keyword}'"
-      ))
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            f"Expected '{case_keyword}'"
+        ))
 
     res.register_advancement()
     self.advance()
@@ -1325,40 +1336,43 @@ class Parser:
     condition = res.register(self.expr())
     if res.error: return res
 
-    if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'THEN'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_NEWLINE:
-      res.register_advancement()
-      self.advance()
-
-      statements = res.register(self.statements())
-      if res.error: return res
-      cases.append((condition, statements, True))
-
-      if self.current_tok.matches(TT_KEYWORD, 'END'):
+    # Changed this part to make THEN optional for single-line if statements
+    if self.current_tok.matches(TT_KEYWORD, 'THEN'):
         res.register_advancement()
         self.advance()
-      else:
-        all_cases = res.register(self.if_expr_b_or_c())
-        if res.error: return res
-        new_cases, else_case = all_cases
-        cases.extend(new_cases)
-    else:
-      expr = res.register(self.statement())
-      if res.error: return res
-      cases.append((condition, expr, False))
 
-      all_cases = res.register(self.if_expr_b_or_c())
-      if res.error: return res
-      new_cases, else_case = all_cases
-      cases.extend(new_cases)
+    if self.current_tok.type == TT_NEWLINE:
+        # Multi-line case
+        res.register_advancement()
+        self.advance()
+
+        statements = res.register(self.statements())
+        if res.error: return res
+        cases.append((condition, statements, True))
+
+        if self.current_tok.matches(TT_KEYWORD, 'END'):
+            res.register_advancement()
+            self.advance()
+        else:
+            all_cases = res.register(self.if_expr_b_or_c())
+            if res.error: return res
+            new_cases, else_case = all_cases
+            cases.extend(new_cases)
+    else:
+        # Single-line case
+        expr = res.register(self.statement())
+        if res.error: return res
+        
+        # Check if next token is elif/else on same line
+        if self.current_tok.matches(TT_KEYWORD, 'elif') or self.current_tok.matches(TT_KEYWORD, 'else'):
+            cases.append((condition, expr, False))
+            all_cases = res.register(self.if_expr_b_or_c())
+            if res.error: return res
+            new_cases, else_case = all_cases
+            cases.extend(new_cases)
+        else:
+            # Regular single-line if
+            cases.append((condition, expr, False))
 
     return res.success((cases, else_case))
 
@@ -3518,6 +3532,7 @@ class Interpreter:
       return res.success(Number.null)
 
 
+
 #######################################
 # RUN
 #######################################
@@ -3549,6 +3564,7 @@ global_symbol_table.set("pop", BuiltInFunction.pop)
 global_symbol_table.set("extend", BuiltInFunction.extend)
 global_symbol_table.set("len", BuiltInFunction.len)
 global_symbol_table.set("awake", BuiltInFunction.run)
+
 
 # EXTRA IN-BUILT FUNCTIONS
 global_symbol_table.set("merge", BuiltInFunction.merge)
@@ -3595,7 +3611,8 @@ def run(fn, text):
   # Generate AST
   parser = Parser(tokens)
   ast = parser.parse()
-  if ast.error: return None, ast.error
+  if ast.error: 
+    return None, ast.error
 
   # Run program
   interpreter = Interpreter()
@@ -3607,15 +3624,14 @@ def run(fn, text):
 
 
 def validate(text):
-  """Check for syntax errors without execution"""
-  # Lexer (Tokenization)
   lexer = Lexer('<stdin>', text)
   tokens, error = lexer.make_tokens()
-  if error: return None, error
+  if error: 
+    return None, error
   
-  # Parser (AST Generation)
   parser = Parser(tokens)
   ast = parser.parse()
-  if ast.error: return None, ast.error
+  if ast.error: 
+    return None, ast.error
   
   return "Build successful", None

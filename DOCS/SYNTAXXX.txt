@@ -1,6 +1,7 @@
 =====================
 VARIABLE & DATA-TYPES
 =====================
+
 initiate int    = 21;
 initiate string = "Hello World";
 initiate float  = 4.10;
@@ -11,23 +12,85 @@ COMMENTS
 ===========
 :: This is a useful piece of Software 
 
+
 =============
 CONDITIONALS
 =============
-ONE LINER **
-if x < 2 THEN echo("Hello World");
 
-MULTI-LINER **
-if x < 2 THEN
-  echo("Hello World");
-elif x > 2 THEN
-  echo("Hello Earth");
-else THEN
-  echo("Hello Universe");
+Jhayscript offers flexible conditional statements 
+with both concise and block-style syntax.
+
+BASIC SYNTAX
+------------
+Single-line conditionals (THEN keyword optional):
+if condition statement [else statement]
+
+Multi-line conditionals (requires THEN/END):
+if condition THEN
+    statements
+[elif condition THEN
+    statements]
+[else THEN
+    statements]
 END
 
-INITIATE THE VALUE RETURNED TO A VARIABLE **
-initiate var = if x < 2 THEN echo("Hello World");
+EXAMPLES
+--------
+1. SINGLE-LINE CONDITIONALS **
+// THEN is optional for single-line
+if x < 2 echo("Hello World");
+if x < 2 echo("Hello") else echo("World");
+
+2. MULTI-LINE CONDITIONALS **
+// THEN required for multi-line blocks
+if x < 2 THEN
+    echo("Hello World");
+    initiate y = x * 2;
+elif x > 2 THEN
+    echo("Hello Earth");
+    initiate y = x / 2;
+else THEN
+    echo("Hello Universe");
+    initiate y = 0;
+END
+
+3. ASSIGNING CONDITIONAL RESULTS **
+// Single-line assignment
+initiate greeting = if x < 2 THEN "Hello" else "Hi";
+
+// Multi-line assignment 
+initiate greeting = if x < 2 THEN
+    "Hello World"
+elif x > 2 THEN
+    "Hello Earth"
+else THEN
+    "Hello Universe"
+END
+
+KEY NOTES
+---------
+- THEN is optional for single-line conditionals
+- THEN is required when using multi-line blocks
+- END is required to close multi-line blocks
+- Parentheses around conditions are optional
+- Semicolons are optional in block statements
+- Indentation (4 spaces recommended) improves readability
+
+BEST PRACTICES
+--------------
+1. Use multi-line format for complex conditionals
+2. Prefer single-line only for trivial cases
+3. Be consistent with THEN usage
+4. Always include END for multi-line blocks
+5. Indent nested conditionals clearly:
+   
+if x < 2 THEN
+    if y < 2 THEN
+        echo("Both small");
+    else THEN
+        echo("X small, Y big");
+    END
+END
 
 ===========
 LOOPS
