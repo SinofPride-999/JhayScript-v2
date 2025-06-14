@@ -8,9 +8,11 @@ import string
 import os
 import math
 import random
-import time
 import threading
-import queue
+import asyncio
+import atexit
+
+
 
 #######################################
 # CONSTANTS
@@ -153,7 +155,7 @@ KEYWORDS = [
   'THEN',
   'END',
   
-  'return',
+  'release',
   'continue',
   'break',
   
@@ -744,7 +746,7 @@ class Parser:
       if import_res.error: return import_res
       return res.success(res.register(import_res))
 
-    if self.current_tok.matches(TT_KEYWORD, 'return'):
+    if self.current_tok.matches(TT_KEYWORD, 'release'):
       res.register_advancement()
       self.advance()
 
@@ -767,7 +769,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'return', 'continue', 'break', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
+        "Expected 'release', 'continue', 'break', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
       ))
     return res.success(expr)
 
@@ -925,7 +927,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'FUN' or 'NOT'"
+        "Expected int, float, identifier, '+', '-', '(', '[', 'if', 'for', 'while', 'function' or 'not'"
       ))
 
     return res.success(node)
@@ -958,37 +960,53 @@ class Parser:
     if res.error: return res
 
     if self.current_tok.type == TT_LPAREN:
-      res.register_advancement()
-      self.advance()
-      arg_nodes = []
-
-      if self.current_tok.type == TT_RPAREN:
         res.register_advancement()
         self.advance()
-      else:
-        arg_nodes.append(res.register(self.expr()))
-        if res.error:
-          return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected ')', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
-          ))
+        arg_nodes = []
 
-        while self.current_tok.type == TT_COMMA:
-          res.register_advancement()
-          self.advance()
+        if self.current_tok.type == TT_RPAREN:
+            res.register_advancement()
+            self.advance()
+        else:
+            arg_nodes.append(res.register(self.expr()))
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ')', 'initiate', 'if', 'for', 'while', 'function', int, float, identifier, '+', '-', '(', '[' or 'not'"
+                ))
 
-          arg_nodes.append(res.register(self.expr()))
-          if res.error: return res
+            while self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
 
-        if self.current_tok.type != TT_RPAREN:
-          return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            f"Expected ',' or ')'"
-          ))
+                arg_nodes.append(res.register(self.expr()))
+                if res.error: return res
 
+            if self.current_tok.type != TT_RPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    f"Expected ',' or ')'"
+                ))
+
+            res.register_advancement()
+            self.advance()
+        return res.success(CallNode(atom, arg_nodes))
+    elif self.current_tok.type == TT_LSQUARE:  # Handle list indexing
         res.register_advancement()
         self.advance()
-      return res.success(CallNode(atom, arg_nodes))
+        
+        index_node = res.register(self.expr())
+        if res.error: return res
+        
+        if self.current_tok.type != TT_RSQUARE:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected ']'"
+            ))
+            
+        res.register_advancement()
+        self.advance()
+        return res.success(CallNode(atom, [index_node]))
     return res.success(atom)
 
   def atom(self):
@@ -1425,7 +1443,7 @@ class Parser:
     if not self.current_tok.matches(TT_KEYWORD, 'for'):
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'FOR'"
+        f"Expected 'for'"
       ))
 
     res.register_advancement()
@@ -2167,65 +2185,57 @@ class AsyncFunction(BaseFunction):
     return f"<async function {self.name}>"
 
 class AsyncCoroutine(Value):
-  def __init__(self, func, context):
-    super().__init__()
-    self.func = func
-    self.context = context
+    def __init__(self, coro):
+        super().__init__()
+        self.coro = coro
+        
+    async def execute_async(self):
+        return await self.coro
+        
+    def execute(self):
+        # Run the coroutine in the event loop
+        future = asyncio.run_coroutine_threadsafe(self.execute_async(), event_loop.loop)
+        return future.result()
+        
+    def copy(self):
+        copy = AsyncCoroutine(self.coro)
+        copy.set_context(self.context)
+        copy.set_pos(self.pos_start, self.pos_end)
+        return copy
       
-  def execute(self):
-    interpreter = Interpreter()
-    value = interpreter.visit(self.func.body_node, self.context)
-    if self.func.should_auto_return:
-      return value
-    return RTResult().success(Number.null)
-      
-  def copy(self):
-    copy = AsyncCoroutine(self.func, self.context)
-    copy.set_context(self.context)
-    copy.set_pos(self.func.pos_start, self.func.pos_end)
-    return copy
-      
-  def __repr__(self):
-    return f"<coroutine {self.func.name}>"
+    def __repr__(self):
+      return f"<coroutine {self.func.name}>"
 
 class EventLoop:
     def __init__(self):
-        self.tasks = queue.Queue()
-        self.thread_pool = []
-        self.max_threads = 4
-        self.running = False
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self.run_loop, daemon=True)
         
     def start(self):
-        self.running = True
-        for _ in range(self.max_threads):
-            thread = threading.Thread(target=self._worker)
-            thread.daemon = True
-            thread.start()
-            self.thread_pool.append(thread)
-            
+        self.thread.start()
+        
+    def run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+        
     def stop(self):
-        self.running = False
-        for thread in self.thread_pool:
-            thread.join()
-            
-    def _worker(self):
-        while self.running:
-            try:
-                task = self.tasks.get(timeout=0.1)
-                if task:
-                    task()
-                self.tasks.task_done()
-            except queue.Empty:
-                continue
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        
+    def submit(self, coroutine, callback=None):
+        async def run_and_callback():
+            result = await coroutine.execute_async()
+            if callback:
+                callback(result)
+            return result
                 
-    def submit(self, coroutine, callback):
-        def task():
-            result = coroutine.execute()
-            callback(result)
-        self.tasks.put(task)
+        asyncio.run_coroutine_threadsafe(run_and_callback(), self.loop)
 
-# Global event loop
 event_loop = EventLoop()
+event_loop.start()
+
+# Add cleanup handler
+import atexit
+atexit.register(event_loop.stop)
 
 class BuiltInFunction(BaseFunction):
   def __init__(self, name):
@@ -2246,28 +2256,29 @@ class BuiltInFunction(BaseFunction):
     return res.success(return_value)
   
   def execute_run_async(self, exec_ctx):
-        coroutine = exec_ctx.symbol_table.get("coroutine")
-        callback = exec_ctx.symbol_table.get("callback")
+    coroutine = exec_ctx.symbol_table.get("coroutine")
+    callback = exec_ctx.symbol_table.get("callback")
+    
+    if not isinstance(coroutine, AsyncCoroutine):
+        return RTResult().failure(RTError(
+            self.pos_start, self.pos_end,
+            "First argument must be a coroutine",
+            exec_ctx
+        ))
         
-        if not isinstance(coroutine, AsyncCoroutine):
-            return RTResult().failure(RTError(
-                self.pos_start, self.pos_end,
-                "First argument must be a coroutine",
-                exec_ctx
-            ))
-            
-        if not isinstance(callback, BaseFunction):
-            return RTResult().failure(RTError(
-                self.pos_start, self.pos_end,
-                "Second argument must be a function",
-                exec_ctx
-            ))
-            
-        def cb(result):
-            callback.execute([result.value])
-            
-        event_loop.submit(coroutine, cb)
-        return RTResult().success(Number.null)
+    if callback and not isinstance(callback, BaseFunction):
+        return RTResult().failure(RTError(
+            self.pos_start, self.pos_end,
+            "Second argument must be a function",
+            exec_ctx
+        ))
+    
+    def cb(result):
+        if callback:
+            callback.execute([result])
+    
+    event_loop.submit(coroutine, cb if callback else None)
+    return RTResult().success(Number.null)
   execute_run_async.arg_names = ["coroutine", "callback"]
 
   def no_visit_method(self, node, context):
@@ -2615,6 +2626,23 @@ class BuiltInFunction(BaseFunction):
     reversed_list.elements = reversed_list.elements[::-1]
     return RTResult().success(reversed_list)
   execute_reverse.arg_names = ["list"]
+  
+  def execute_sleep(self, exec_ctx):
+    duration = exec_ctx.symbol_table.get("duration")
+    if not isinstance(duration, Number):
+        return RTResult().failure(RTError(
+            exec_ctx.pos_start, exec_ctx.pos_end,
+            "Sleep duration must be a number",
+            exec_ctx
+        ))
+    
+    # Return a coroutine that will sleep asynchronously
+    async def sleep_coroutine():
+        await asyncio.sleep(duration.value)
+        return Number.null
+        
+    return RTResult().success(AsyncCoroutine(sleep_coroutine))
+  execute_sleep.arg_names = ["duration"]
 
   def execute_sort(self, exec_ctx):
     list_ = exec_ctx.symbol_table.get("list")
@@ -3457,9 +3485,25 @@ class Interpreter:
     value_to_call = value_to_call.copy().set_pos(node.pos_start, node.pos_end)
 
     for arg_node in node.arg_nodes:
-      args.append(res.register(self.visit(arg_node, context)))
-      if res.should_return(): return res
+        args.append(res.register(self.visit(arg_node, context)))
+        if res.should_return(): return res
 
+    # Handle list indexing
+    if isinstance(value_to_call, (List, String)) and len(args) == 1 and isinstance(args[0], Number):
+        try:
+            index = args[0].value
+            if isinstance(value_to_call, List):
+                return res.success(value_to_call.elements[index])
+            else:  # String
+                return res.success(String(value_to_call.value[index]))
+        except IndexError:
+            return res.failure(RTError(
+                node.pos_start, node.pos_end,
+                f"Index {index} out of bounds",
+                context
+            ))
+    
+    # Normal function call
     return_value = res.register(value_to_call.execute(args))
     if res.should_return(): return res
     return_value = return_value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
@@ -3531,16 +3575,15 @@ class Interpreter:
     value = res.register(self.visit(node.node, context))
     if res.error: return res
     
-    # If it's a function, make it async
     if isinstance(value, Function):
         async_func = AsyncFunction(value.name, value.body_node, value.arg_names, value.should_auto_return)
         async_func.set_context(value.context)
         async_func.set_pos(value.pos_start, value.pos_end)
         return res.success(async_func)
     
-    # Otherwise wrap in a coroutine that immediately resolves
-    return res.success(AsyncCoroutine(
-        Function("<anonymous>", node.node, [], True).set_context(context),
+    return res.failure(RTError(
+        node.pos_start, node.pos_end,
+        "Async can only be used with functions",
         context
     ))
 
@@ -3556,9 +3599,10 @@ class Interpreter:
               context
           ))
       
-      # In a real implementation, this would yield to the event loop
-      # For simplicity, we'll just execute it directly here
-      return value.execute()
+      # Execute the coroutine synchronously (for now)
+      result = value.execute()
+      if result.error: return result
+      return res.success(result.value)
 
   def visit_SleepNode(self, node, context):
       res = RTResult()
@@ -3578,8 +3622,6 @@ class Interpreter:
       time.sleep(duration.value)
       
       return res.success(Number.null)
-
-
 
 #######################################
 # RUN

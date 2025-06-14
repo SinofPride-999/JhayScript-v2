@@ -1,0 +1,7 @@
+async function fetchData(url)
+    await sleep(1)  :: This will now properly pause execution
+    release "Data fetched from " + url
+END
+
+initiate task = fetchData("https://example.com")
+run_async(task, function(result) echo(result) END)

@@ -1,0 +1,276 @@
+# JhayScript Documentation
+
+## Introduction
+
+JhayScript is a dynamically-typed, interpreted programming language with Python-like syntax and some unique features. It supports imperative, functional, and object-oriented programming paradigms with a focus on readability and expressiveness.
+
+## Table of Contents
+1.  [Syntax Basics](#syntax-basics)
+2.  [Variables](#variables)
+3.  [Data Types](#data-types)
+4.  [Control Flow](#control-flow)
+5.  [Functions](#functions)
+6.  [Error Handling](#error-handling)
+7.  [Asynchronous Programming](#asynchronous-programming)
+8.  [Modules](#modules)
+9.  [Standard Library](#standard-library)
+10. [Error Reference](#error-reference)
+11. [Under the Hood](#under-the-hood)
+
+## Syntax Basics
+
+### Comments
+```jh
+:: This is a single-line comment
+```
+
+### Statements
+Statements are terminated by newlines or semicolons:
+```jh
+x = 5; y = 10
+```
+
+## Variables
+
+### Declaration
+Variables are declared with the `initiate` keyword:
+```jh
+initiate x = 10
+```
+
+### Assignment
+```jh
+x = 20
+```
+
+### Scoping
+Variables are function-scoped (like JavaScript) rather than block-scoped.
+
+## Data Types
+
+### Numbers
+```jh
+42        :: integer
+3.14      :: float
+```
+
+### Strings
+```jh
+"Hello"   :: double quotes
+'World'   :: single quotes
+```
+
+### Lists
+```jh
+[1, 2, 3] :: list of numbers
+["a", "b"] :: list of strings
+```
+
+### Booleans
+```jh
+True
+False
+```
+
+### Null
+```jh
+Null
+```
+
+## Control Flow
+
+### If Statements
+```jh
+if x > 10 THEN
+    echo("Big number")
+elif x > 5 THEN
+    echo("Medium number")
+else
+    echo("Small number")
+END
+```
+
+### For Loops
+```jh
+for i = 1 to 10 THEN
+    echo(i)
+END
+```
+
+With step:
+```jh
+for i = 1 to 10 step 2 THEN
+    echo(i)
+END
+```
+
+### While Loops
+```jh
+while x < 10 THEN
+    echo(x)
+    x = x + 1
+END
+```
+
+## Functions
+
+### Basic Function
+```jh
+function greet(name)
+    return "Hello " + name
+END
+```
+
+### Arrow Function
+```jh
+function add(a, b) -> a + b
+```
+
+### Async Function
+```jh
+async function fetchData()
+    sleep(1)
+    return "Data"
+END
+```
+
+### Function Call
+```jh
+result = greet("World")
+```
+
+## Error Handling
+
+### Try-Catch
+```jh
+fuck_around
+    riskyOperation()
+find_out(error)
+    echo("Caught error: " + error.message)
+END
+```
+
+## Asynchronous Programming
+
+### Async/Await
+```jh
+async function getData()
+    data = await fetchData()
+    echo(data)
+END
+```
+
+### Sleep
+```jh
+sleep(1)  :: sleeps for 1 second
+```
+
+## Modules
+
+### Importing
+```jh
+import { func1, func2 as f2 } from "module"
+```
+
+## Standard Library
+
+### Common Functions
+```jh
+echo("Hello")          :: prints to console
+input()                :: gets user input
+len([1, 2, 3])         :: returns 3
+```
+
+### List Operations
+```jh
+append(list, item)
+pop(list)
+sort(list)
+```
+
+### Math Functions
+```jh
+abs(-5)                :: 5
+sqrt(16)               :: 4
+power(2, 3)            :: 8
+```
+
+## Error Reference
+
+### Common Errors
+1. **Illegal Character**: Unexpected character in code
+2. **Expected Character**: Missing expected character (like closing parenthesis)
+3. **Invalid Syntax**: Code doesn't follow language grammar
+4. **Runtime Error**: Error during execution (like division by zero)
+
+### Error Properties
+When catching errors:
+```jh
+error.message   :: Error description
+error.line      :: Line number
+error.column    :: Column number
+error.file      :: File name
+```
+
+## Under the Hood
+
+### Lexical Analysis
+The lexer breaks code into tokens:
+- Keywords (`if`, `function`, etc.)
+- Identifiers (variable names)
+- Literals (numbers, strings)
+- Operators (`+`, `-`, etc.)
+- Punctuation (`(`, `)`, etc.)
+
+### Parsing
+The parser builds an Abstract Syntax Tree (AST) from tokens, enforcing grammar rules.
+
+### Execution
+The interpreter:
+1. Creates a global symbol table
+2. Processes the AST node by node
+3. Maintains execution context
+4. Handles errors
+
+### Memory Management
+- Uses Python's reference counting/garbage collection
+- Symbol tables manage variable scoping
+
+## Example Programs
+
+### Fibonacci Sequence
+```jh
+function fib(n)
+    if n <= 1 THEN
+        return n
+    else
+        return fib(n-1) + fib(n-2)
+    END
+END
+
+for i = 0 to 10 THEN
+    echo(fib(i))
+END
+```
+
+### File Reader
+```jh
+import { readFile } from "file"
+
+fuck_around
+    content = readFile("data.txt")
+    echo(content)
+find_out(error)
+    echo("Error reading file: " + error.message)
+END
+```
+
+## Conclusion
+
+JhayScript combines familiar syntax with unique features like expressive error handling (`fuck_around`/`find_out`) and async/await support. The language is designed to be approachable while providing powerful features under the hood.
+
+For more advanced usage, explore the standard library functions and experiment with the async features. The error handling system provides detailed information to help debug issues in your code.
+
+---
+
+This documentation provides a comprehensive overview of JhayScript. The actual implementation handles all these features through the lexer, parser, and interpreter components shown in the original code. The language's syntax is processed by breaking it down into tokens, building an AST, and then executing the AST nodes with proper context management.
