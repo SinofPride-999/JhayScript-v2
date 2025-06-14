@@ -157,8 +157,8 @@ KEYWORDS = [
   'continue',
   'break',
   
-  'try',
-  'catch',
+  'fuck_around',
+  'find_out',
   
   'import',
   'from',
@@ -1050,7 +1050,7 @@ class Parser:
       if res.error: return res
       return res.success(func_def)
     
-    elif tok.matches(TT_KEYWORD, 'try'):
+    elif tok.matches(TT_KEYWORD, 'fuck_around'):
         try_expr = res.register(self.try_expr())
         if res.error: return res
         return res.success(try_expr)
@@ -1109,74 +1109,17 @@ class Parser:
     res = ParseResult()
     pos_start = self.current_tok.pos_start.copy()
 
-    if not self.current_tok.matches(TT_KEYWORD, 'try'):
+    if not self.current_tok.matches(TT_KEYWORD, 'fuck_around'):
         return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            f"Expected 'try'"
+            self.current_tok.pos_start, self.pos_end,
+            f"Expected 'fuck_around'"
         ))
 
     res.register_advancement()
     self.advance()
 
-    if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
-        return res.failure(InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            f"Expected 'THEN'"
-        ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_NEWLINE:
-        res.register_advancement()
-        self.advance()
-
-        try_body = res.register(self.statements())
-        if res.error: return res
-
-        if not self.current_tok.matches(TT_KEYWORD, 'catch'):
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected 'catch'"
-            ))
-
-        res.register_advancement()
-        self.advance()
-
-        if self.current_tok.type != TT_LPAREN:
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected '('"
-            ))
-
-        res.register_advancement()
-        self.advance()
-
-        if self.current_tok.type != TT_IDENTIFIER:
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected identifier"
-            ))
-
-        catch_var = self.current_tok
-        res.register_advancement()
-        self.advance()
-
-        if self.current_tok.type != TT_RPAREN:
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected ')'"
-            ))
-
-        res.register_advancement()
-        self.advance()
-
-        if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected 'THEN'"
-            ))
-
+    # Check for multi-line version (with THEN)
+    if self.current_tok.matches(TT_KEYWORD, 'THEN'):
         res.register_advancement()
         self.advance()
 
@@ -1184,17 +1127,73 @@ class Parser:
             res.register_advancement()
             self.advance()
 
-            catch_body = res.register(self.statements())
+            try_body = res.register(self.statements())
             if res.error: return res
 
-            if not self.current_tok.matches(TT_KEYWORD, 'END'):
+            if not self.current_tok.matches(TT_KEYWORD, 'find_out'):
                 return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    f"Expected 'END'"
+                    self.current_tok.pos_start, self.pos_end,
+                    f"Expected 'find_out'"
                 ))
 
             res.register_advancement()
             self.advance()
+
+            if self.current_tok.type != TT_LPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.pos_end,
+                    f"Expected '('"
+                ))
+
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.pos_end,
+                    f"Expected identifier"
+                ))
+
+            catch_var = self.current_tok
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type != TT_RPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.pos_end,
+                    f"Expected ')'"
+                ))
+
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.matches(TT_KEYWORD, 'THEN'):
+                res.register_advancement()
+                self.advance()
+
+                if self.current_tok.type == TT_NEWLINE:
+                    res.register_advancement()
+                    self.advance()
+
+                    catch_body = res.register(self.statements())
+                    if res.error: return res
+
+                    if not self.current_tok.matches(TT_KEYWORD, 'END'):
+                        return res.failure(InvalidSyntaxError(
+                            self.current_tok.pos_start, self.pos_end,
+                            f"Expected 'END'"
+                        ))
+
+                    res.register_advancement()
+                    self.advance()
+                else:
+                    catch_body = res.register(self.statement())
+                    if res.error: return res
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.pos_end,
+                    f"Expected 'THEN'"
+                ))
 
             return res.success(TryNode(
                 try_body,
@@ -1203,13 +1202,57 @@ class Parser:
                 pos_start,
                 self.current_tok.pos_end.copy()
             ))
-    else:
-        # Single-line version would go here
-        pass
+    
+    # Single-line version (without THEN)
+    try_body = res.register(self.statement())
+    if res.error: return res
 
-    return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected newline or statement"
+    if not self.current_tok.matches(TT_KEYWORD, 'find_out'):
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.pos_end,
+            f"Expected 'find_out'"
+        ))
+
+    res.register_advancement()
+    self.advance()
+
+    if self.current_tok.type != TT_LPAREN:
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.pos_end,
+            f"Expected '('"
+        ))
+
+    res.register_advancement()
+    self.advance()
+
+    if self.current_tok.type != TT_IDENTIFIER:
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.pos_end,
+            f"Expected identifier"
+        ))
+
+    catch_var = self.current_tok
+    res.register_advancement()
+    self.advance()
+
+    if self.current_tok.type != TT_RPAREN:
+        return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.pos_end,
+            f"Expected ')'"
+        ))
+
+    res.register_advancement()
+    self.advance()
+
+    catch_body = res.register(self.statement())
+    if res.error: return res
+
+    return res.success(TryNode(
+        try_body,
+        catch_var,
+        catch_body,
+        pos_start,
+        self.current_tok.pos_end.copy()
     ))
 
   def list_expr(self):

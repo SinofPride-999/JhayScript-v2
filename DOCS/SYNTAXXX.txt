@@ -152,7 +152,24 @@ async function fetchData(url)
 END
 
 
+============
+TRY / CATCH
+============
+EXCEPTION HANDLING
 
+initiate x = 2
+
+try THEN
+  if x > 10 THEN
+      echo("Big")
+  elif x > 5 THEN
+      echo("Medium")
+  else
+      echo("Small")
+  END
+catch(error) THEN
+  echo("Error")
+END
 
 
 
