@@ -1,5 +1,0 @@
-initiate x = 7
-
-if x > 5 THEN
-  initiate x = x + 1
-END

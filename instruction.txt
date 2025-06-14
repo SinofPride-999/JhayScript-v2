@@ -1,0 +1,120 @@
+# Distributing JhayScript to Your Friends
+
+Here's a complete guide to help your friends install and use your JhayScript language:
+
+## Option 1: Simple Executable Distribution (Easiest)
+
+### What to Send Your Friends:
+1. The standalone `.exe` file from your `dist` folder (`jhayscript.exe`)
+2. A sample `.jhay` script file to test with
+
+### Installation Instructions:
+1. **Create a folder** for JhayScript (e.g., `C:\JhayScript`)
+2. **Place the executable** in this folder
+3. **Add to PATH** (so they can run it from anywhere):
+   - Press `Win + R`, type `sysdm.cpl`, go to Advanced > Environment Variables
+   - Under "System variables", select "Path" > Edit > New
+   - Add the path to your folder (e.g., `C:\JhayScript`)
+   - Click OK to close all dialogs
+
+### Usage:
+```cmd
+jhayscript my_script.jhay
+```
+
+
+
+
+## Option 2: Installer Package (More Professional)
+
+### Create an Installer:
+1. Use `Inno Setup` (free) to create a Windows installer
+2. The installer can:
+   - Place the executable in `Program Files`
+   - Add to PATH automatically
+   - Create file associations for `.jhay` files
+
+### What to Send:
+- A single `.exe` installer file
+
+### Installation:
+Your friends just need to run the installer
+
+
+
+
+
+
+
+
+
+
+
+
+## Option 3: Python Package Distribution
+
+If your friends have Python installed:
+
+### What to Send:
+1. Your entire JhayScript folder (excluding `__pycache__` and `dist`)
+2. Or package it with `setuptools`
+
+### Installation:
+```cmd
+pip install /path/to/jhayscript/folder
+```
+
+## Setting Up File Associations (Optional)
+
+To make `.jhay` files runnable by double-clicking:
+
+```cmd
+assoc .jhay=JhayScriptFile
+ftype JhayScriptFile="C:\Path\To\jhayscript.exe" "%1"
+```
+
+## Complete User Guide to Share
+
+**How to Install and Use JhayScript**
+
+1. **Download** the JhayScript package from [your sharing method]
+2. **Install**:
+   - *If using .exe*: Place in a folder and add to PATH (see instructions above)
+   - *If using installer*: Just run it
+3. **Test Installation**:
+   ```cmd
+   jhayscript --version
+   ```
+4. **Write Scripts**:
+   - Create files with `.jhay` extension
+   - Example (`hello.jhay`):
+     ```
+     echo "Hello from JhayScript!"
+     ```
+5. **Run Scripts**:
+   ```cmd
+   jhayscript hello.jhay
+   ```
+6. (Optional) **Enable double-click** by setting file associations
+
+## Troubleshooting Guide
+
+1. **"Not recognized as command"**:
+   - The PATH wasn't set correctly - recheck the installation
+2. **Missing DLL errors**:
+   - They might need to install the Visual C++ Redistributable
+3. **File association issues**:
+   - Run the association commands as Administrator
+
+## Best Distribution Methods
+
+1. **For non-technical friends**:
+   - Create an installer (Option 2)
+   - Include a README.txt with simple instructions
+
+2. **For developer friends**:
+   - Share the GitHub repository
+   - Or send the Python package (Option 3)
+
+3. **For quick testing**:
+   - Just send the .exe and a sample script (Option 1)
